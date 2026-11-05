@@ -13,11 +13,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedBookRouteImport } from './routes/_authenticated/book'
-import { Route as AuthenticatedJawshanRouteImport } from './routes/_authenticated/jawshan'
 import { Route as AuthenticatedLeaderboardRouteImport } from './routes/_authenticated/leaderboard'
 import { Route as AuthenticatedManageRouteImport } from './routes/_authenticated/manage'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
-import { Route as AuthenticatedReaderRouteImport } from './routes/_authenticated/reader'
 import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/today'
 
 const IndexRoute = IndexRouteImport.update({
@@ -39,11 +37,6 @@ const AuthenticatedBookRoute = AuthenticatedBookRouteImport.update({
   path: '/book',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedJawshanRoute = AuthenticatedJawshanRouteImport.update({
-  id: '/jawshan',
-  path: '/jawshan',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedLeaderboardRoute =
   AuthenticatedLeaderboardRouteImport.update({
     id: '/leaderboard',
@@ -60,11 +53,6 @@ const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedReaderRoute = AuthenticatedReaderRouteImport.update({
-  id: '/reader',
-  path: '/reader',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedTodayRoute = AuthenticatedTodayRouteImport.update({
   id: '/today',
   path: '/today',
@@ -75,22 +63,18 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/book': typeof AuthenticatedBookRoute
-  '/jawshan': typeof AuthenticatedJawshanRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/manage': typeof AuthenticatedManageRoute
   '/profile': typeof AuthenticatedProfileRoute
-  '/reader': typeof AuthenticatedReaderRoute
   '/today': typeof AuthenticatedTodayRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/book': typeof AuthenticatedBookRoute
-  '/jawshan': typeof AuthenticatedJawshanRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/manage': typeof AuthenticatedManageRoute
   '/profile': typeof AuthenticatedProfileRoute
-  '/reader': typeof AuthenticatedReaderRoute
   '/today': typeof AuthenticatedTodayRoute
 }
 export interface FileRoutesById {
@@ -99,47 +83,27 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/book': typeof AuthenticatedBookRoute
-  '/_authenticated/jawshan': typeof AuthenticatedJawshanRoute
   '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/_authenticated/manage': typeof AuthenticatedManageRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
-  '/_authenticated/reader': typeof AuthenticatedReaderRoute
   '/_authenticated/today': typeof AuthenticatedTodayRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
-    | '/auth'
-    | '/book'
-    | '/jawshan'
-    | '/leaderboard'
-    | '/manage'
-    | '/profile'
-    | '/reader'
-    | '/today'
+    '/' | '/auth' | '/book' | '/leaderboard' | '/manage' | '/profile' | '/today'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
-    | '/auth'
-    | '/book'
-    | '/jawshan'
-    | '/leaderboard'
-    | '/manage'
-    | '/profile'
-    | '/reader'
-    | '/today'
+    '/' | '/auth' | '/book' | '/leaderboard' | '/manage' | '/profile' | '/today'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/book'
-    | '/_authenticated/jawshan'
     | '/_authenticated/leaderboard'
     | '/_authenticated/manage'
     | '/_authenticated/profile'
-    | '/_authenticated/reader'
     | '/_authenticated/today'
   fileRoutesById: FileRoutesById
 }
@@ -179,13 +143,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBookRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/jawshan': {
-      id: '/_authenticated/jawshan'
-      path: '/jawshan'
-      fullPath: '/jawshan'
-      preLoaderRoute: typeof AuthenticatedJawshanRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/leaderboard': {
       id: '/_authenticated/leaderboard'
       path: '/leaderboard'
@@ -207,13 +164,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProfileRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/reader': {
-      id: '/_authenticated/reader'
-      path: '/reader'
-      fullPath: '/reader'
-      preLoaderRoute: typeof AuthenticatedReaderRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/today': {
       id: '/_authenticated/today'
       path: '/today'
@@ -226,21 +176,17 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedBookRoute: typeof AuthenticatedBookRoute
-  AuthenticatedJawshanRoute: typeof AuthenticatedJawshanRoute
   AuthenticatedLeaderboardRoute: typeof AuthenticatedLeaderboardRoute
   AuthenticatedManageRoute: typeof AuthenticatedManageRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
-  AuthenticatedReaderRoute: typeof AuthenticatedReaderRoute
   AuthenticatedTodayRoute: typeof AuthenticatedTodayRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBookRoute: AuthenticatedBookRoute,
-  AuthenticatedJawshanRoute: AuthenticatedJawshanRoute,
   AuthenticatedLeaderboardRoute: AuthenticatedLeaderboardRoute,
   AuthenticatedManageRoute: AuthenticatedManageRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
-  AuthenticatedReaderRoute: AuthenticatedReaderRoute,
   AuthenticatedTodayRoute: AuthenticatedTodayRoute,
 }
 

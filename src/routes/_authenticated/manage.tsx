@@ -6,14 +6,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { errorText, useHabits } from "@/hooks/use-habits";
-import { activeTasks, type TaskDef } from "@/lib/habits";
-import { newHabitKey } from "@/lib/jawshan";
+import { activeTasks, newHabitKey, type TaskDef } from "@/lib/habits";
 
 export const Route = createFileRoute("/_authenticated/manage")({
   component: ManagePage,
 });
 
-const EMOJIS = ["✨", "📖", "🤲", "📿", "📚", "💪", "🌙", "⭐", "🕌", "🌿", "💧", "🏃", "✍️", "🇬🇧", "🇪🇸"];
+const EMOJIS = ["📚", "📖", "💪", "🏃", "🚶", "🏋️", "🎧", "✍️", "🌟", "🔥", "💧", "🧘", "🚴", "⚽", "🎯", "🌿"];
 
 interface Draft {
   key: string | null;
@@ -71,8 +70,8 @@ function ManagePage() {
     };
     setBusy(true);
     const result = draft.key
-      ? await supabase.from("habits").update(payload).eq("key", draft.key)
-      : await supabase.from("habits").insert({
+      ? await supabase.from("club_habits").update(payload).eq("key", draft.key)
+      : await supabase.from("club_habits").insert({
           ...payload,
           key: newHabitKey(),
           sort_order: Math.max(0, ...tasks.map((task) => task.sortOrder ?? 0)) + 10,
@@ -88,7 +87,7 @@ function ManagePage() {
   };
 
   const patch = async (key: string, values: { archived?: boolean; sort_order?: number }) => {
-    const { error } = await supabase.from("habits").update(values).eq("key", key);
+    const { error } = await supabase.from("club_habits").update(values).eq("key", key);
     if (error) toast.error(errorText(error) || "Не удалось изменить привычку");
     await qc.invalidateQueries({ queryKey: ["habits"] });
   };
@@ -102,7 +101,7 @@ function ManagePage() {
     copy.splice(index, 1);
     copy.splice(next, 0, current);
     setBusy(true);
-    const results = await Promise.all(copy.map((task, order) => supabase.from("habits").update({ sort_order: (order + 1) * 10 }).eq("key", task.key)));
+    const results = await Promise.all(copy.map((task, order) => supabase.from("club_habits").update({ sort_order: (order + 1) * 10 }).eq("key", task.key)));
     setBusy(false);
     const failed = results.find((result) => result.error);
     if (failed?.error) toast.error(errorText(failed.error) || "Не удалось изменить порядок");
@@ -113,7 +112,7 @@ function ManagePage() {
     <div className="space-y-5 px-4 pb-6 pt-6">
       <header>
         <h1 className="font-display text-3xl font-bold">Привычки</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Общий список группы. Любой участник может добавить, изменить, переставить или убрать в архив. Удалять совсем нельзя: старые отметки остаются.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Общий список Stage 2. Любой участник может добавить, изменить, переставить или убрать в архив ежедневную привычку или привычку несколько раз в неделю. Удалять совсем нельзя: старые отметки остаются.</p>
       </header>
 
       {habitsQ.isError && (

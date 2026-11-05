@@ -22,7 +22,7 @@ async function fetchAllCompletions(): Promise<Completion[]> {
   const page = 1000;
   for (let from = 0; ; from += page) {
     const { data, error } = await supabase
-      .from("completions")
+      .from("club_completions")
       .select("id,user_id,task_key,completed_on")
       .order("completed_on", { ascending: true })
       .range(from, from + page - 1);
@@ -37,7 +37,7 @@ export const groupQuery = queryOptions({
   queryKey: ["group"],
   queryFn: async (): Promise<GroupData> => {
     const [p, completions] = await Promise.all([
-      supabase.from("profiles").select("id,display_name,avatar_emoji,created_at").order("created_at"),
+      supabase.from("club_profiles").select("id,display_name,avatar_emoji,created_at").order("created_at"),
       fetchAllCompletions(),
     ]);
     if (p.error) throw p.error;
@@ -67,7 +67,7 @@ export function errorText(err: unknown): string {
 }
 
 function isKnownRule(message: string): boolean {
-  return /Недельная|Можно|Отменить|привыч|Джевш|доля|Ключ/.test(message);
+  return /Недельная|Можно|Отменить|привыч|Ключ|прогресс|имя|присоединиться/.test(message);
 }
 
 export function habitFromRow(row: {
@@ -99,7 +99,7 @@ export function useHabits() {
   useEffect(() => {
     const channel = supabase
       .channel(`habits-${Math.random().toString(36).slice(2)}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "habits" }, () => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "club_habits" }, () => {
         qc.invalidateQueries({ queryKey: ["habits"] });
       })
       .subscribe();
@@ -110,7 +110,7 @@ export function useHabits() {
   return useQuery({
     queryKey: ["habits"],
     queryFn: async (): Promise<TaskDef[]> => {
-      const { data, error } = await supabase.from("habits").select("key,title,description,emoji,kind,weekly_target,points,sort_order,archived").order("sort_order");
+      const { data, error } = await supabase.from("club_habits").select("key,title,description,emoji,kind,weekly_target,points,sort_order,archived").order("sort_order");
       if (error) throw error;
       return (data ?? []).map(habitFromRow);
     },
@@ -124,10 +124,10 @@ export function useGroup() {
   useEffect(() => {
     const channel = supabase
       .channel(`group-${Math.random().toString(36).slice(2)}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "completions" }, () => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "club_completions" }, () => {
         qc.invalidateQueries({ queryKey: ["group"] });
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "club_profiles" }, () => {
         qc.invalidateQueries({ queryKey: ["group"] });
       })
       .subscribe();
@@ -156,14 +156,14 @@ export function useToggleTask(userId: string | undefined) {
       const today = almatyToday();
       if (done) {
         const { error } = await supabase
-          .from("completions")
+          .from("club_completions")
           .delete()
           .eq("user_id", userId)
           .eq("task_key", key)
           .eq("completed_on", today);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("completions").insert({ user_id: userId, task_key: key, completed_on: today });
+        const { error } = await supabase.from("club_completions").insert({ user_id: userId, task_key: key, completed_on: today });
         if (error) throw error;
       }
     },

@@ -1,4 +1,3 @@
-
 // Pure habit logic: tasks, Almaty dates, points, streaks, levels, badges.
 
 export type TaskKey = string;
@@ -16,27 +15,23 @@ export interface TaskDef {
 }
 
 export const DAILY_TASKS: TaskDef[] = [
-  { key: "quran", title: "Коран", description: "1 страница", emoji: "📖", kind: "daily", target: 1, points: 10, sortOrder: 10 },
-  { key: "salawat", title: "Салауат", description: "100 раз", emoji: "🤲", kind: "daily", target: 1, points: 10, sortOrder: 20 },
-  { key: "istighfar", title: "Истигфар", description: "100 раз", emoji: "📿", kind: "daily", target: 1, points: 10, sortOrder: 30 },
-  { key: "reading", title: "Чтение книги", description: "10 страниц или 30 минут аудиокниги", emoji: "📚", kind: "daily", target: 1, points: 10, sortOrder: 40 },
-  { key: "sport", title: "Спорт", description: "Тренировка в зале или 10 000 шагов", emoji: "💪", kind: "daily", target: 1, points: 10, sortOrder: 50 },
-  { key: "english", title: "Английский", description: "30 минут", emoji: "🇬🇧", kind: "daily", target: 1, points: 10, sortOrder: 60 },
-  { key: "spanish", title: "Испанский", description: "10 минут", emoji: "🇪🇸", kind: "daily", target: 1, points: 10, sortOrder: 70 },
+  { key: "reading", title: "Книга", description: "10 страниц или 30 минут аудиокниги", emoji: "📚", kind: "daily", target: 1, points: 10, sortOrder: 10 },
+  { key: "sport", title: "Спорт", description: "Тренировка в зале или 10 000 шагов", emoji: "💪", kind: "daily", target: 1, points: 10, sortOrder: 20 },
 ];
 
-export const WEEKLY_TASKS: TaskDef[] = [
-  { key: "fasting", title: "Ораза", description: "1 раз в неделю", emoji: "🌙", kind: "weekly", target: 1, points: 30, sortOrder: 80 },
-  { key: "tahajjud", title: "Тахаджуд", description: "2 раза в неделю", emoji: "⭐", kind: "weekly", target: 2, points: 20, sortOrder: 90 },
-];
+export const WEEKLY_TASKS: TaskDef[] = [];
 
 export const ALL_TASKS = [...DAILY_TASKS, ...WEEKLY_TASKS];
 export const TASK_MAP = Object.fromEntries(ALL_TASKS.map((t) => [t.key, t])) as Record<string, TaskDef>;
 export const DAILY_KEYS = new Set<string>(DAILY_TASKS.map((t) => t.key));
 export const DAILY_COUNT = DAILY_TASKS.length;
-export const WEEKLY_TARGET_TOTAL = WEEKLY_TASKS.reduce((s, t) => s + t.target, 0); // 3
+export const WEEKLY_TARGET_TOTAL = WEEKLY_TASKS.reduce((s, t) => s + t.target, 0);
 export const PERFECT_DAY_BONUS = 20;
-export const JAWSHAN_POINTS = 10;
+
+export function newHabitKey(): string {
+  const token = crypto.randomUUID().replace(/-/g, "").slice(0, 10);
+  return `h_${token}`;
+}
 
 function bySort(a: TaskDef, b: TaskDef): number {
   return (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.key.localeCompare(b.key);
@@ -132,14 +127,12 @@ export function computePoints(
   from = "0000-01-01",
   to = "9999-12-31",
   tasks: readonly TaskDef[] = ALL_TASKS,
-  jawshanDates: readonly string[] = [],
 ): number {
   const { map } = catalog(tasks);
   const sub = list.filter((c) => inRange(c, from, to));
   let pts = 0;
   for (const c of sub) pts += map.get(c.task_key)?.points ?? 0;
   pts += perfectDays(sub, tasks).length * PERFECT_DAY_BONUS;
-  for (const date of jawshanDates) if (date >= from && date <= to) pts += JAWSHAN_POINTS;
   return pts;
 }
 
@@ -209,18 +202,13 @@ export function computeBadges(list: Completion[], tasks: readonly TaskDef[] = AL
   const scoped = list.filter((c) => map.has(c.task_key));
   const count = (k: string) => new Set(scoped.filter((c) => c.task_key === k).map((c) => c.completed_on)).size;
   const best = bestStreak(scoped, tasks);
-  const fastingWeeks = new Set(scoped.filter((c) => c.task_key === "fasting").map((c) => weekStart(c.completed_on))).size;
   return [
     { key: "first", emoji: "👣", title: "Первый шаг", description: "Первое выполненное задание", earned: scoped.length >= 1 },
     { key: "perfect", emoji: "🌟", title: "Идеальный день", description: dailyCount > 0 ? `Все ${dailyCount} ежедневных заданий за день` : "Все ежедневные задания за день", earned: perfectDays(scoped, tasks).length >= 1 },
     { key: "week_fire", emoji: "🔥", title: "Неделя огня", description: "Серия 7 дней", earned: best >= 7 },
     { key: "month", emoji: "🏔️", title: "Месяц стойкости", description: "Серия 30 дней", earned: best >= 30 },
-    { key: "faster", emoji: "🌙", title: "Постящийся", description: "Ораза 4 недели", earned: fastingWeeks >= 4 },
-    { key: "night", emoji: "✨", title: "Ночная молитва", description: "10 раз Тахаджуд", earned: count("tahajjud") >= 10 },
-    { key: "quran", emoji: "📖", title: "Чтец Корана", description: "Коран 30 дней", earned: count("quran") >= 30 },
-    { key: "polyglot", emoji: "🗣️", title: "Полиглот", description: "Английский и испанский по 30 дней", earned: count("english") >= 30 && count("spanish") >= 30 },
+    { key: "reader", emoji: "📚", title: "Книжный червь", description: "Книга 30 дней", earned: count("reading") >= 30 },
+    { key: "athlete", emoji: "💪", title: "Спортсмен", description: "Спорт 30 дней", earned: count("sport") >= 30 },
     { key: "hundred", emoji: "💯", title: "Сотня", description: "100 выполненных заданий", earned: scoped.length >= 100 },
   ];
 }
-
-

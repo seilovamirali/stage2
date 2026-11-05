@@ -1,12 +1,11 @@
-
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { meQuery, useGroup, useHabits, useToday } from "@/hooks/use-habits";
-import { useJawshan } from "@/hooks/use-jawshan";
 import { Bar } from "@/components/ProgressRing";
+import { Button } from "@/components/ui/button";
 import {
-  ALL_TASKS, activeDaily, completionPct, computePoints, currentStreak, periodRange, type Period,
+  ALL_TASKS, activeDaily, completionPct, computePoints, currentStreak, diffDays, periodRange, weekStart, type Period,
 } from "@/lib/habits";
 
 export const Route = createFileRoute("/_authenticated/leaderboard")({
@@ -22,10 +21,10 @@ const MEDALS = ["🥇", "🥈", "🥉"];
 
 function LeaderboardPage() {
   const { data: me } = useQuery(meQuery);
-  const { data, isLoading } = useGroup();
+  const group = useGroup();
+  const { data, isLoading } = group;
   const habitsQ = useHabits();
   const today = useToday();
-  const jawshan = useJawshan(today);
   const tasks = habitsQ.data ?? ALL_TASKS;
   const dailyTasks = activeDaily(tasks);
   const [period, setPeriod] = useState<Period>("week");
@@ -36,26 +35,32 @@ function LeaderboardPage() {
     return data.profiles
       .map((p) => {
         const list = data.completions.filter((c) => c.user_id === p.id);
-        const jawshanDates = (jawshan.data?.done ?? []).filter((row) => row.user_id === p.id).map((row) => row.date);
         const first = list[0]?.completed_on ?? p.created_at.slice(0, 10);
         const [from, to] = periodRange(period, today, first);
         const todayDone = new Set(list.filter((c) => c.completed_on === today && dailyKeys.has(c.task_key)).map((c) => c.task_key));
+        const weekFrom = weekStart(today);
+        const weekDone = list.filter((c) => c.completed_on >= weekFrom && c.completed_on <= today && dailyKeys.has(c.task_key)).length;
+        const weekDays = diffDays(today, weekFrom) + 1;
         return {
           ...p,
-          points: computePoints(list, from, to, tasks, jawshanDates),
+          points: computePoints(list, from, to, tasks),
           pct: completionPct(list, from, to, tasks),
+          weekPct: completionPct(list, weekFrom, today, tasks),
+          weekDone,
+          weekDays,
           streak: currentStreak(list, today, tasks),
           todayDone,
         };
       })
       .sort((a, b) => b.points - a.points || b.pct - a.pct);
-  }, [dailyTasks, data, jawshan.data, period, tasks, today]);
+  }, [dailyTasks, data, period, tasks, today]);
 
   const podium = [rows[1], rows[0], rows[2]];
 
   return (
     <div className="px-4 pt-6">
       <h1 className="font-display text-3xl font-bold">Рейтинг</h1>
+      <p className="mt-1 text-sm text-muted-foreground">Stage 2 · проценты за выбранный период</p>
 
       <div className="mt-4 grid grid-cols-3 gap-1 rounded-2xl bg-muted p-1">
         {PERIODS.map((p) => (
@@ -66,7 +71,9 @@ function LeaderboardPage() {
         ))}
       </div>
 
-      {isLoading ? (
+      {group.isError ? (
+        <Button variant="outline" className="mt-6 w-full" onClick={() => group.refetch()}>Не удалось загрузить. Повторить</Button>
+      ) : isLoading ? (
         <p className="py-10 text-center text-muted-foreground">Загрузка…</p>
       ) : (
         <>
@@ -82,7 +89,7 @@ function LeaderboardPage() {
                       <>
                         <span className="text-3xl">{r.avatar_emoji}</span>
                         <span className="mt-1 w-full truncate text-center text-xs font-semibold">{r.display_name}</span>
-                        <span className="text-xs opacity-80">{r.points} оч.</span>
+                        <span className="text-xs opacity-80">{r.points} оч. · {r.pct}%</span>
                       </>
                     ) : <span className="text-xs opacity-50">—</span>}
                     <div className={`mt-2 flex w-full items-start justify-center rounded-t-xl pt-2 text-2xl ${h} ${place === 0 ? "bg-gradient-gold" : "bg-primary-foreground/15"}`}>
@@ -106,11 +113,28 @@ function LeaderboardPage() {
                       {r.display_name} {isMe && <span className="ml-1 rounded-full bg-primary px-2 py-0.5 text-[10px] text-primary-foreground">Вы</span>}
                     </p>
                     <p className="text-xs text-muted-foreground">{r.pct}% · 🔥 {r.streak}</p>
+                    <Bar value={r.pct} className="mt-1.5" />
                   </div>
                   <span className="font-display text-lg font-bold text-primary">{r.points}</span>
                 </li>
               );
             })}
+          </ul>
+
+          <h2 className="font-display mb-1 mt-8 text-xl font-bold">Эта неделя</h2>
+          <p className="mb-3 text-sm text-muted-foreground">С {weekStart(today)} · ежедневные отметки и процент недели</p>
+          <ul className="space-y-2">
+            {rows.map((r) => (
+              <li key={`week-${r.id}`} className="rounded-2xl border bg-card p-3 shadow-card">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">{r.avatar_emoji}</span>
+                  <span className="flex-1 truncate font-medium">{r.display_name}</span>
+                  <span className="text-sm font-bold">{r.weekPct}%</span>
+                </div>
+                <Bar value={r.weekPct} className="mt-2" />
+                <p className="mt-1 text-xs text-muted-foreground">{r.weekDone} ежедневных отметок за {r.weekDays} дн.</p>
+              </li>
+            ))}
           </ul>
 
           <h2 className="font-display mb-3 mt-8 text-xl font-bold">Сегодня в группе</h2>
@@ -139,5 +163,3 @@ function LeaderboardPage() {
     </div>
   );
 }
-
-

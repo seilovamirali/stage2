@@ -35,7 +35,7 @@ function AuthPage() {
         });
         if (error) throw error;
         if (!data.session) { toast.success("Проверьте почту для подтверждения"); return; }
-        toast.success("Добро пожаловать в группу!");
+        toast.success("Добро пожаловать в Stage 2!");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -58,9 +58,9 @@ function AuthPage() {
       <div className="bg-pattern absolute inset-0 opacity-50" />
       <div className="relative mx-auto max-w-sm">
         <div className="text-center">
-          <span className="text-5xl">🌙</span>
-          <h1 className="font-display mt-2 text-4xl font-bold">Habits</h1>
-          <p className="mt-1 text-sm opacity-80">Вместе — к лучшим привычкам</p>
+          <span className="text-5xl">📚💪</span>
+          <h1 className="font-display mt-2 text-4xl font-bold">Stage 2</h1>
+          <p className="mt-1 text-sm opacity-80">Книга и спорт</p>
         </div>
         <div className="mt-8 rounded-3xl bg-card p-5 text-card-foreground shadow-elegant">
           <div className="grid grid-cols-2 gap-1 rounded-2xl bg-muted p-1">

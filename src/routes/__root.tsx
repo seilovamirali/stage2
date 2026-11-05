@@ -14,15 +14,13 @@ import { Toaster } from "@/components/ui/sonner";
 import "../styles.css";
 
 const TITLES: Record<string, string> = {
-  "/": "Habits — трекер привычек для семьи и друзей",
-  "/auth": "Вход и регистрация — Habits",
-  "/today": "Сегодня — Habits",
-  "/leaderboard": "Рейтинг — Habits",
-  "/profile": "Профиль — Habits",
-  "/book": "Книга группы — Habits",
-  "/reader": "Читать — Habits",
-  "/jawshan": "Джевшен — Habits",
-  "/manage": "Привычки — Habits",
+  "/": "Stage 2 — книга и спорт",
+  "/auth": "Вход и регистрация — Stage 2",
+  "/today": "Сегодня — Stage 2",
+  "/leaderboard": "Рейтинг — Stage 2",
+  "/profile": "Профиль — Stage 2",
+  "/book": "Книга — Stage 2",
+  "/manage": "Привычки — Stage 2",
 };
 
 function NotFoundComponent() {
@@ -53,7 +51,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">Страница не загрузилась</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Что-то пошло не так. Обновите страницу или вернитесь на главную.</p>
+        <p className="mt-2 text-sm text-muted-foreground">{error.message || "Что-то пошло не так. Обновите страницу или вернитесь на главную."}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
@@ -88,7 +86,7 @@ function RootComponent() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   useEffect(() => {
-    document.title = TITLES[pathname] ?? "Habits — трекер привычек";
+    document.title = TITLES[pathname] ?? "Stage 2";
   }, [pathname]);
 
   useEffect(() => {

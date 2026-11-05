@@ -11,15 +11,16 @@ describe("App routing", () => {
     expect(matches.at(-1)?.routeId).not.toBe(rootRouteId);
   });
 
-  it("matches the reader under the authenticated layout", () => {
+  it("matches the book page under the authenticated layout", () => {
     const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
-    const matches = router.matchRoutes("/reader");
-    expect(matches.some((match) => match.routeId.includes("reader"))).toBe(true);
+    const matches = router.matchRoutes("/book");
+    expect(matches.some((match) => match.routeId.includes("book"))).toBe(true);
   });
 
-  it("matches jawshan and habit management", () => {
+  it("matches habit management and does not keep the old reader", () => {
     const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
-    expect(router.matchRoutes("/jawshan").some((match) => match.routeId.includes("jawshan"))).toBe(true);
     expect(router.matchRoutes("/manage").some((match) => match.routeId.includes("manage"))).toBe(true);
+    expect(router.matchRoutes("/reader").every((match) => !match.routeId.includes("reader"))).toBe(true);
+    expect(router.matchRoutes("/jawshan").every((match) => !match.routeId.includes("jawshan"))).toBe(true);
   });
 });

@@ -7,7 +7,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { meQuery, useGroup, useHabits, useToday } from "@/hooks/use-habits";
-import { useJawshan } from "@/hooks/use-jawshan";
 import {
   ALL_TASKS, activeDaily, addDays, bestStreak, computeBadges, computePoints, currentStreak, dailyByDay, levelInfo,
 } from "@/lib/habits";
@@ -16,14 +15,13 @@ export const Route = createFileRoute("/_authenticated/profile")({
   component: ProfilePage,
 });
 
-const EMOJIS = ["🙂", "😊", "🌙", "⭐", "🌿", "🦁", "🐎", "🦅", "🌸", "🌻", "📿", "🕌", "🧕", "🧔", "👦", "👧", "👨", "👩", "🐱", "🐻"];
+const EMOJIS = ["🙂", "😊", "📚", "💪", "⭐", "🌿", "🦁", "🏃", "🌸", "🌻", "🎯", "🔥", "🎧", "🚴", "👦", "👧", "👨", "👩", "🐱", "🐻"];
 
 function ProfilePage() {
   const { data: me } = useQuery(meQuery);
   const { data } = useGroup();
   const habitsQ = useHabits();
   const today = useToday();
-  const jawshan = useJawshan(today);
   const tasks = habitsQ.data ?? ALL_TASKS;
   const dailyCount = activeDaily(tasks).length;
   const qc = useQueryClient();
@@ -37,11 +35,7 @@ function ProfilePage() {
   }, [profile?.id, profile?.display_name, profile?.avatar_emoji]);
 
   const mine = useMemo(() => (data?.completions ?? []).filter((c) => c.user_id === me?.id), [data, me]);
-  const jawshanDates = useMemo(
-    () => (jawshan.data?.done ?? []).filter((row) => row.user_id === me?.id).map((row) => row.date),
-    [jawshan.data, me?.id],
-  );
-  const points = computePoints(mine, "0000-01-01", "9999-12-31", tasks, jawshanDates);
+  const points = computePoints(mine, "0000-01-01", "9999-12-31", tasks);
   const lvl = levelInfo(points);
   const badges = computeBadges(mine, tasks);
   const byDay = dailyByDay(mine, tasks);
@@ -50,7 +44,7 @@ function ProfilePage() {
   const save = async () => {
     if (!me || !name.trim()) return;
     setSaving(true);
-    const { error } = await supabase.from("profiles").update({ display_name: name.trim(), avatar_emoji: emoji }).eq("id", me.id);
+    const { error } = await supabase.from("club_profiles").update({ display_name: name.trim(), avatar_emoji: emoji }).eq("id", me.id);
     setSaving(false);
     if (error) toast.error("Не удалось сохранить профиль");
     else { toast.success("Профиль сохранён"); qc.invalidateQueries({ queryKey: ["group"] }); }
@@ -100,8 +94,8 @@ function ProfilePage() {
           <div className="mt-4 grid grid-cols-2 gap-2">
             <Tile label="Всего очков" value={points} />
             <Tile label="Выполнено" value={mine.length} />
-            <Tile label="Серия сейчас" value={`🔥 ${currentStreak(mine, today)}`} />
-            <Tile label="Лучшая серия" value={`🏅 ${bestStreak(mine)}`} />
+            <Tile label="Серия сейчас" value={`🔥 ${currentStreak(mine, today, tasks)}`} />
+            <Tile label="Лучшая серия" value={`🏅 ${bestStreak(mine, tasks)}`} />
           </div>
         </div>
       </section>
@@ -137,7 +131,7 @@ function ProfilePage() {
       </section>
 
       <Button asChild variant="hero" size="xl" className="w-full">
-        <Link to="/manage">Привычки группы</Link>
+        <Link to="/manage">Привычки</Link>
       </Button>
       <Button variant="outline" size="xl" className="mb-4 w-full" onClick={signOut}>Выйти</Button>
     </div>

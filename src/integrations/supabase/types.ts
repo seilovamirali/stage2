@@ -1,4 +1,3 @@
-
 export type Json =
   | string
   | number
@@ -8,146 +7,27 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.18"
   }
   public: {
     Tables: {
-      book_progress: {
+      club_members: {
         Row: {
-          current_page: number
-          day_start_date: string
-          day_start_page: number
-          updated_at: string
+          joined_at: string
           user_id: string
         }
         Insert: {
-          current_page?: number
-          day_start_date?: string
-          day_start_page?: number
-          updated_at?: string
+          joined_at?: string
           user_id: string
         }
         Update: {
-          current_page?: number
-          day_start_date?: string
-          day_start_page?: number
-          updated_at?: string
+          joined_at?: string
           user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "book_progress_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      completions: {
-        Row: {
-          completed_on: string
-          created_at: string
-          id: string
-          task_key: string
-          user_id: string
-        }
-        Insert: {
-          completed_on?: string
-          created_at?: string
-          id?: string
-          task_key: string
-          user_id: string
-        }
-        Update: {
-          completed_on?: string
-          created_at?: string
-          id?: string
-          task_key?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "completions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      daily_reminders: {
-        Row: {
-          arabic: string | null
-          created_at: string
-          date: string
-          id: string
-          kind: string
-          lesson_ru: string | null
-          source: string
-          text_ru: string
-        }
-        Insert: {
-          arabic?: string | null
-          created_at?: string
-          date: string
-          id?: string
-          kind: string
-          lesson_ru?: string | null
-          source: string
-          text_ru: string
-        }
-        Update: {
-          arabic?: string | null
-          created_at?: string
-          date?: string
-          id?: string
-          kind?: string
-          lesson_ru?: string | null
-          source?: string
-          text_ru?: string
         }
         Relationships: []
       }
-      personal_messages: {
-        Row: {
-          created_at: string
-          date: string
-          id: string
-          read_at: string | null
-          text_ru: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          date?: string
-          id?: string
-          read_at?: string | null
-          text_ru: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          date?: string
-          id?: string
-          read_at?: string | null
-          text_ru?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "personal_messages_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      profiles: {
+      club_profiles: {
         Row: {
           avatar_emoji: string
           created_at: string
@@ -168,7 +48,7 @@ export type Database = {
         }
         Relationships: []
       }
-      habits: {
+      club_habits: {
         Row: {
           archived: boolean
           created_at: string
@@ -210,41 +90,56 @@ export type Database = {
         }
         Relationships: []
       }
-      jawshan_assignments: {
+      club_completions: {
         Row: {
-          date: string
-          part_from: number
-          part_to: number
+          completed_on: string
+          created_at: string
+          id: string
+          task_key: string
           user_id: string
         }
         Insert: {
-          date: string
-          part_from: number
-          part_to: number
+          completed_on?: string
+          created_at?: string
+          id?: string
+          task_key: string
           user_id: string
         }
         Update: {
-          date?: string
-          part_from?: number
-          part_to?: number
+          completed_on?: string
+          created_at?: string
+          id?: string
+          task_key?: string
           user_id?: string
         }
         Relationships: []
       }
-      jawshan_done: {
+      club_book_progress: {
         Row: {
-          created_at: string
-          date: string
+          book_title: string
+          current_page: number
+          day_start_date: string
+          day_start_page: number
+          total_pages: number
+          updated_at: string
           user_id: string
         }
         Insert: {
-          created_at?: string
-          date: string
+          book_title?: string
+          current_page?: number
+          day_start_date?: string
+          day_start_page?: number
+          total_pages?: number
+          updated_at?: string
           user_id: string
         }
         Update: {
-          created_at?: string
-          date?: string
+          book_title?: string
+          current_page?: number
+          day_start_date?: string
+          day_start_page?: number
+          total_pages?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -254,14 +149,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      ensure_jawshan_day: {
-        Args: { p_date: string }
+      club_ensure_member: {
+        Args: { p_display_name?: string | null }
         Returns: {
-          date: string
-          part_from: number
-          part_to: number
-          user_id: string
-        }[]
+          avatar_emoji: string
+          created_at: string
+          display_name: string
+          id: string
+        }
+      }
+      club_is_member: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
     }
     Enums: {
@@ -395,5 +294,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-
-

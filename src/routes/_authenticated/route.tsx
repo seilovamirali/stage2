@@ -1,12 +1,18 @@
-
-import { createFileRoute, Link, Outlet, redirect, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { BookOpen } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
     if (!data.user) throw redirect({ to: "/auth" });
+    const meta = data.user.user_metadata?.display_name;
+    const { error } = await supabase.rpc("club_ensure_member", {
+      p_display_name: typeof meta === "string" ? meta : null,
+    });
+    if (error) {
+      const missing = error.code === "PGRST202" || /club_ensure_member|schema cache/i.test(error.message);
+      throw new Error(missing ? "База Stage 2 ещё не настроена" : error.message);
+    }
   },
   component: AppLayout,
 });
@@ -14,21 +20,18 @@ export const Route = createFileRoute("/_authenticated")({
 const TABS = [
   { to: "/today", label: "Сегодня", icon: "☀️" },
   { to: "/leaderboard", label: "Рейтинг", icon: "🏆" },
+  { to: "/book", label: "Книга", icon: "📚" },
   { to: "/profile", label: "Профиль", icon: "👤" },
-  { to: "/jawshan", label: "Джевшен", icon: "📿" },
-  { to: "/book", label: "Книга", icon: <BookOpen className="size-5" /> },
 ] as const;
 
 function AppLayout() {
-  const path = useRouterState({ select: (state) => state.location.pathname });
-  const reading = path === "/reader";
   return (
-    <div className={`min-h-screen bg-background ${reading ? "" : "pb-24"}`}>
-      <div className={`mx-auto ${reading ? "max-w-3xl" : "max-w-lg"}`}>
+    <div className="min-h-screen bg-background pb-24">
+      <div className="mx-auto max-w-lg">
         <Outlet />
       </div>
-      {!reading && <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">
-        <div className="mx-auto grid max-w-lg grid-cols-5">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">
+        <div className="mx-auto grid max-w-lg grid-cols-4">
           {TABS.map((t) => (
             <Link
               key={t.to}
@@ -47,9 +50,7 @@ function AppLayout() {
             </Link>
           ))}
         </div>
-      </nav>}
+      </nav>
     </div>
   );
 }
-
-

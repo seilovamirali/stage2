@@ -1,16 +1,17 @@
-
 import { useEffect } from "react";
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { clampPage, type BookProgress } from "@/lib/book";
+import { clampPage, clampTotalPages, type BookProgress } from "@/lib/book";
+
+const columns = "user_id,book_title,total_pages,current_page,day_start_date,day_start_page,updated_at";
 
 export const bookProgressQuery = queryOptions({
   queryKey: ["book-progress"],
   queryFn: async (): Promise<BookProgress[]> => {
     const rows: BookProgress[] = [];
     for (let from = 0; ; from += 1000) {
-      const { data, error } = await supabase.from("book_progress").select("user_id,current_page,day_start_date,day_start_page,updated_at").order("user_id").range(from, from + 999);
+      const { data, error } = await supabase.from("club_book_progress").select(columns).order("user_id").range(from, from + 999);
       if (error) throw error;
       rows.push(...(data ?? []));
       if (!data || data.length < 1000) return rows;
@@ -25,7 +26,7 @@ export function useBookProgress() {
   const qc = useQueryClient();
   useEffect(() => {
     const channel = supabase.channel(`book-progress-${Math.random().toString(36).slice(2)}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "book_progress" }, () => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "club_book_progress" }, () => {
         qc.invalidateQueries({ queryKey: ["book-progress"] });
       }).subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -36,11 +37,17 @@ export function useBookProgress() {
 export function useSaveBookProgress(userId: string | undefined) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (page: number) => {
+    mutationFn: async (input: { title: string; totalPages: number; page: number }) => {
       if (!userId) throw new Error("Войдите, чтобы сохранить прогресс");
-      const { data, error } = await supabase.from("book_progress")
-        .upsert({ user_id: userId, current_page: clampPage(page) }, { onConflict: "user_id" })
-        .select("user_id,current_page,day_start_date,day_start_page,updated_at").single();
+      const total = clampTotalPages(input.totalPages);
+      const { data, error } = await supabase.from("club_book_progress")
+        .upsert({
+          user_id: userId,
+          book_title: input.title.trim(),
+          total_pages: total,
+          current_page: clampPage(input.page, total),
+        }, { onConflict: "user_id" })
+        .select(columns).single();
       if (error) throw error;
       return data;
     },
@@ -52,4 +59,3 @@ export function useSaveBookProgress(userId: string | undefined) {
     onError: () => toast.error("Не удалось сохранить прогресс. Попробуйте ещё раз."),
   });
 }
-

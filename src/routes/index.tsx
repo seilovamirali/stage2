@@ -1,9 +1,8 @@
-
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { DAILY_TASKS, WEEKLY_TASKS } from "@/lib/habits";
+import { DAILY_TASKS } from "@/lib/habits";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -22,13 +21,13 @@ function Landing() {
       <section className="relative overflow-hidden rounded-b-[2.5rem] bg-gradient-hero px-5 pb-12 pt-14 text-primary-foreground">
         <div className="bg-pattern absolute inset-0 opacity-60" />
         <div className="relative mx-auto max-w-lg text-center">
-          <span className="text-6xl">🌙</span>
-          <h1 className="font-display mt-3 text-5xl font-bold">Habits</h1>
+          <span className="text-5xl">📚💪</span>
+          <h1 className="font-display mt-3 text-5xl font-bold">Stage 2</h1>
           <p className="mx-auto mt-4 max-w-sm text-lg opacity-90">
-            Маленькие ежедневные шаги — большие перемены. Отмечайте привычки вместе с семьёй и друзьями.
+            Книга и спорт. Отмечайте привычки вместе с группой и смотрите, кто держит темп.
           </p>
           <Button asChild variant="gold" size="xl" className="mt-8 w-full max-w-xs">
-            <Link to="/auth">Присоединиться к группе</Link>
+            <Link to="/auth">Присоединиться</Link>
           </Button>
         </div>
       </section>
@@ -49,17 +48,10 @@ function Landing() {
               <li key={t.key} className="flex items-center gap-3 text-sm"><span className="text-xl">{t.emoji}</span><b>{t.title}</b><span className="text-muted-foreground">{t.description}</span></li>
             ))}
           </ul>
-          <h2 className="font-display mt-5 text-xl font-bold">Каждую неделю</h2>
-          <ul className="mt-3 space-y-2">
-            {WEEKLY_TASKS.map((t) => (
-              <li key={t.key} className="flex items-center gap-3 text-sm"><span className="text-xl">{t.emoji}</span><b>{t.title}</b><span className="text-muted-foreground">{t.description}</span></li>
-            ))}
-          </ul>
+          <p className="mt-4 text-sm text-muted-foreground">Участники могут добавить и другие привычки: на каждый день или несколько раз в неделю.</p>
         </div>
-        <p className="text-center text-sm text-muted-foreground">Пусть Аллах примет ваши старания 🤲</p>
+        <p className="text-center text-sm text-muted-foreground">Stage 2 · книга и спорт</p>
       </div>
     </div>
   );
 }
-
-

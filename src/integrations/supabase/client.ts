@@ -13,5 +13,8 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
+    // Same github.io origin as the old Habits site. A separate key keeps that
+    // session from signing this site in and joining the club automatically.
+    storageKey: "sb-stage2-auth",
   },
 });
