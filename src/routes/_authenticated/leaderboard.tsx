@@ -4,16 +4,22 @@ import { useQuery } from "@tanstack/react-query";
 import { meQuery, useGroup, useHabits, useToday } from "@/hooks/use-habits";
 import { Bar } from "@/components/ProgressRing";
 import { Button } from "@/components/ui/button";
+import { CompoundChart } from "@/components/Atomic";
+import { RaceTrack, type Racer } from "@/components/Race";
+import { compoundSeries } from "@/lib/atomic";
 import {
-  ALL_TASKS, activeDaily, completionPct, computePoints, currentStreak, diffDays, periodRange, weekStart, type Period,
+  ALL_TASKS, activeDaily, completionPct, computePoints, currentStreak, diffDays, formatRuDate, periodRange, weekStart, type Period,
 } from "@/lib/habits";
 
 export const Route = createFileRoute("/_authenticated/leaderboard")({
   component: LeaderboardPage,
 });
 
-const PERIODS: { key: Period; label: string }[] = [
+const RACE_PERIODS: { key: Period; label: string }[] = [
+  { key: "today", label: "Сегодня" },
   { key: "week", label: "Неделя" },
+];
+const MORE_PERIODS: { key: Period; label: string }[] = [
   { key: "month", label: "Месяц" },
   { key: "all", label: "Всё время" },
 ];
@@ -52,20 +58,27 @@ function LeaderboardPage() {
           todayDone,
         };
       })
-      .sort((a, b) => b.points - a.points || b.pct - a.pct);
+      .sort((a, b) => b.pct - a.pct || b.points - a.points || a.display_name.localeCompare(b.display_name, "ru"));
   }, [dailyTasks, data, period, tasks, today]);
-
-  const podium = [rows[1], rows[0], rows[2]];
 
   return (
     <div className="px-4 pt-6">
-      <h1 className="font-display text-3xl font-bold">Рейтинг</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Stage 2 · проценты за выбранный период</p>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gold">Stage 2</p>
+      <h1 className="font-display mt-2 text-3xl font-bold">Трасса</h1>
+      <p className="mt-1 text-sm text-muted-foreground">Место на треке — процент выполнения. Финиш справа.</p>
 
-      <div className="mt-4 grid grid-cols-3 gap-1 rounded-2xl bg-muted p-1">
-        {PERIODS.map((p) => (
+      <div className="mt-5 grid grid-cols-2 gap-2">
+        {RACE_PERIODS.map((p) => (
           <button key={p.key} onClick={() => setPeriod(p.key)}
-            className={`h-11 rounded-xl text-sm font-semibold transition-all ${period === p.key ? "bg-card text-primary shadow-card" : "text-muted-foreground"}`}>
+            className={`h-11 rounded-full text-sm font-semibold transition-all ${period === p.key ? "bg-foreground text-background" : "border border-border text-muted-foreground"}`}>
+            {p.label}
+          </button>
+        ))}
+      </div>
+      <div className="mt-2 flex gap-2">
+        {MORE_PERIODS.map((p) => (
+          <button key={p.key} onClick={() => setPeriod(p.key)}
+            className={`h-9 flex-1 text-xs font-semibold ${period === p.key ? "text-foreground underline decoration-gold decoration-2 underline-offset-4" : "text-muted-foreground"}`}>
             {p.label}
           </button>
         ))}
@@ -77,31 +90,22 @@ function LeaderboardPage() {
         <p className="py-10 text-center text-muted-foreground">Загрузка…</p>
       ) : (
         <>
-          <div className="relative mt-6 overflow-hidden rounded-3xl bg-gradient-hero px-3 pt-6 text-primary-foreground">
-            <div className="bg-pattern absolute inset-0 opacity-50" />
-            <div className="relative grid grid-cols-3 items-end gap-2">
-              {podium.map((r, i) => {
-                const place = i === 1 ? 0 : i === 0 ? 1 : 2;
-                const h = ["h-28", "h-20", "h-14"][place];
-                return (
-                  <div key={i} className="flex flex-col items-center">
-                    {r ? (
-                      <>
-                        <span className="text-3xl">{r.avatar_emoji}</span>
-                        <span className="mt-1 w-full truncate text-center text-xs font-semibold">{r.display_name}</span>
-                        <span className="text-xs opacity-80">{r.points} оч. · {r.pct}%</span>
-                      </>
-                    ) : <span className="text-xs opacity-50">—</span>}
-                    <div className={`mt-2 flex w-full items-start justify-center rounded-t-xl pt-2 text-2xl ${h} ${place === 0 ? "bg-gradient-gold" : "bg-primary-foreground/15"}`}>
-                      {MEDALS[place]}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+          <div className="mt-6">
+            <RaceTrack
+              motionKey={period}
+              racers={rows.map((racer): Racer => ({
+                id: racer.id,
+                name: racer.display_name,
+                emoji: racer.avatar_emoji,
+                pct: racer.pct,
+                points: racer.points,
+                isMe: racer.id === me?.id,
+              }))}
+            />
           </div>
 
-          <ul className="mt-4 space-y-2">
+          <h2 className="font-display mb-3 mt-8 text-xl font-bold">1% лучше</h2>
+          <ul className="space-y-2">
             {rows.map((r, i) => {
               const isMe = r.id === me?.id;
               return (
@@ -112,8 +116,11 @@ function LeaderboardPage() {
                     <p className="truncate font-semibold">
                       {r.display_name} {isMe && <span className="ml-1 rounded-full bg-primary px-2 py-0.5 text-[10px] text-primary-foreground">Вы</span>}
                     </p>
-                    <p className="text-xs text-muted-foreground">{r.pct}% · 🔥 {r.streak}</p>
+                    <p className="text-xs text-muted-foreground">{r.pct}% · серия {r.streak}</p>
                     <Bar value={r.pct} className="mt-1.5" />
+                    <div className="mt-2">
+                      <CompoundChart compact points={compoundSeries((data?.completions ?? []).filter((row) => row.user_id === r.id), today, tasks)} />
+                    </div>
                   </div>
                   <span className="font-display text-lg font-bold text-primary">{r.points}</span>
                 </li>
@@ -122,7 +129,7 @@ function LeaderboardPage() {
           </ul>
 
           <h2 className="font-display mb-1 mt-8 text-xl font-bold">Эта неделя</h2>
-          <p className="mb-3 text-sm text-muted-foreground">С {weekStart(today)} · ежедневные отметки и процент недели</p>
+          <p className="mb-3 text-sm text-muted-foreground">С {formatRuDate(weekStart(today))} · ежедневные отметки и процент недели</p>
           <ul className="space-y-2">
             {rows.map((r) => (
               <li key={`week-${r.id}`} className="rounded-2xl border bg-card p-3 shadow-card">

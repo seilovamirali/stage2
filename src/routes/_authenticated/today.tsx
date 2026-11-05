@@ -5,13 +5,18 @@ import { Button } from "@/components/ui/button";
 import { ProgressRing, Bar } from "@/components/ProgressRing";
 import { Confetti } from "@/components/Confetti";
 import { BookTeaser } from "@/components/BookTeaser";
+import { ChainGrid, CheckOrb, CompoundChart, FourLawsCard, HabitDots, IdentityField } from "@/components/Atomic";
+import { MyRaceCard } from "@/components/Race";
 import { meQuery, useGroup, useHabits, useToday, useToggleTask } from "@/hooks/use-habits";
 import { useBookProgress } from "@/hooks/use-book";
 import {
   ALL_TASKS, activeDaily, activeWeekly, computePoints, currentStreak, formatRuDate,
-  levelInfo, weekStart, type TaskDef,
+  levelInfo, periodRange, weekStart, type TaskDef,
 } from "@/lib/habits";
 import { pagePhrase } from "@/lib/book";
+import {
+  compoundSeries, dayChain, habitChain, lawForDate, missedYesterday, periodScore, upgradePhrase,
+} from "@/lib/atomic";
 
 export const Route = createFileRoute("/_authenticated/today")({
   component: TodayPage,
@@ -40,8 +45,26 @@ function TodayPage() {
   const lvl = levelInfo(points);
   const streak = currentStreak(mine, today, tasks);
   const ws = weekStart(today);
+  const [weekFrom, weekTo] = periodRange("week", today);
+  const weekScore = periodScore(mine, weekFrom, weekTo, tasks);
+  const weekPoints = computePoints(mine, weekFrom, weekTo, tasks);
+  const standings = useMemo(() => {
+    const profiles = data?.profiles ?? [];
+    return profiles
+      .map((person) => {
+        const list = (data?.completions ?? []).filter((row) => row.user_id === person.id);
+        return { id: person.id, pct: periodScore(list, weekFrom, weekTo, tasks).pct, points: computePoints(list, weekFrom, weekTo, tasks) };
+      })
+      .sort((a, b) => b.pct - a.pct || b.points - a.points);
+  }, [data, tasks, weekFrom, weekTo]);
+  const place = Math.max(1, standings.findIndex((row) => row.id === me?.id) + 1);
+  const leader = standings[0]?.id === me?.id && standings.length > 0;
+  const showMiss = missedYesterday(mine, today, tasks, profile?.created_at) && doneDaily < dailyCount;
+  const curve = useMemo(() => compoundSeries(mine, today, tasks), [mine, tasks, today]);
+  const chain = useMemo(() => dayChain(mine, today, tasks), [mine, tasks, today]);
 
   const [celebrate, setCelebrate] = useState(false);
+  const [burstKey, setBurstKey] = useState<string | null>(null);
   const prevDone = useRef<number | null>(null);
   useEffect(() => {
     if (isLoading) return;
@@ -49,78 +72,96 @@ function TodayPage() {
     prevDone.current = doneDaily;
     if (prev !== null && dailyCount > 0 && prev < dailyCount && doneDaily === dailyCount) {
       setCelebrate(true);
-      setTimeout(() => setCelebrate(false), 3500);
+      setTimeout(() => setCelebrate(false), 2800);
     }
   }, [dailyCount, doneDaily, isLoading]);
 
-  const onToggle = (t: TaskDef, done: boolean) => toggle.mutate({ key: t.key, done });
+  const onToggle = (task: TaskDef, done: boolean) => {
+    if (!done) {
+      setBurstKey(task.key);
+      window.setTimeout(() => setBurstKey((current) => current === task.key ? null : current), 700);
+    }
+    toggle.mutate({ key: task.key, done });
+  };
 
   return (
-    <div>
+    <div className="px-5 pb-8 pt-8">
       {celebrate && <Confetti />}
-      <header className="relative overflow-hidden rounded-b-[2rem] bg-gradient-hero px-5 pb-6 pt-8 text-primary-foreground">
-        <div className="bg-pattern absolute inset-0 opacity-60" />
-        <div className="relative">
-          <p className="text-sm capitalize opacity-80">{formatRuDate(today)}</p>
-          <h1 className="font-display mt-1 text-2xl font-bold leading-tight">
-            Привет, {profile?.display_name ?? "…"}!
-          </h1>
-          <p className="mt-1 text-sm opacity-80">Stage 2 · книга и спорт</p>
-          <div className="mt-5 flex items-center gap-5">
-            <ProgressRing value={pct} label={`${doneDaily}/${dailyCount}`} />
-            <div className="flex-1 space-y-2.5">
-              <Stat label="Серия" value={`🔥 ${streak}`} />
-              <Stat label="Очки" value={`✨ ${points}`} />
-              <div>
-                <div className="flex justify-between text-xs opacity-90">
-                  <span>Ур. {lvl.level} · {lvl.title}</span>
-                  <span>{points}/{lvl.nextMin}</span>
-                </div>
-                <div className="mt-1 h-2 overflow-hidden rounded-full bg-primary-foreground/20">
-                  <div className="h-full rounded-full bg-gradient-gold transition-all duration-700" style={{ width: `${lvl.progress}%` }} />
-                </div>
+      <header>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gold">Stage 2</p>
+        <p className="mt-3 text-sm capitalize text-muted-foreground">{formatRuDate(today)}</p>
+        <h1 className="font-display mt-1 text-3xl font-bold leading-tight">
+          Привет, {profile?.display_name ?? "…"}
+        </h1>
+        <div className="mt-6 flex items-center gap-4">
+          <ProgressRing value={pct} size={104} stroke={8} label={`${doneDaily}/${dailyCount}`} />
+          <div className="flex-1 space-y-2">
+            <Stat label="Серия" value={String(streak)} />
+            <Stat label="Очки" value={String(points)} />
+            <div>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Ур. {lvl.level} · {lvl.title}</span>
+                <span>{points}/{lvl.nextMin}</span>
+              </div>
+              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+                <div className="h-full rounded-full bg-gold transition-all duration-700" style={{ width: `${lvl.progress}%` }} />
               </div>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="space-y-6 px-4 pt-5">
+      <div className="mt-8 space-y-8">
         {(group.isError || habitsQ.isError) && (
           <Button variant="outline" className="w-full" onClick={() => { void group.refetch(); void habitsQ.refetch(); }}>
             Не удалось загрузить. Повторить
           </Button>
         )}
 
+        <MyRaceCard
+          pct={weekScore.pct}
+          points={weekPoints}
+          place={data ? place : 1}
+          total={Math.max(1, standings.length)}
+          phrase={upgradePhrase(weekScore.done, weekScore.denom)}
+          leader={leader}
+        />
+
+        {showMiss && (
+          <section className="border border-gold bg-gold-soft px-4 py-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gold">Не пропускай дважды</p>
+            <p className="mt-1 text-sm leading-relaxed">Вчера был пропуск. Сегодня достаточно одного маленького шага, чтобы цепочка жила дальше.</p>
+          </section>
+        )}
+
+        <FourLawsCard law={lawForDate(today)} />
+
+        <CompoundChart points={curve} />
+        <ChainGrid dots={chain} />
+
         {dailyCount > 0 && doneDaily === dailyCount && (
-          <div className="animate-pop rounded-2xl bg-gradient-gold p-4 text-center font-semibold text-gold-foreground shadow-gold">
-            Все задания на сегодня выполнены!
+          <div className="animate-pop border border-gold bg-gold px-4 py-3 text-center text-sm font-semibold text-gold-foreground">
+            Все задания на сегодня выполнены
           </div>
         )}
 
         <section>
-          <h2 className="font-display mb-3 text-xl font-bold">Ежедневные задания</h2>
+          <h2 className="font-display mb-3 text-xl font-bold">Сегодня</h2>
           <div className="space-y-3">
-            {dailyTasks.map((t, i) => {
-              const done = todaySet.has(t.key);
-              if (t.key === "reading") {
-                return (
-                  <ReadingTaskCard
-                    key={t.key}
-                    task={t}
-                    done={done}
-                    index={i}
-                    pageLabel={myBook ? pagePhrase(myBook.current_page) : "Укажите свою страницу"}
-                    disabled={isLoading || !me}
-                    onClick={() => onToggle(t, done)}
-                  />
-                );
-              }
-              return (
-                <TaskCard key={t.key} task={t} done={done} index={i} disabled={isLoading || !me}
-                  onClick={() => onToggle(t, done)} />
-              );
-            })}
+            {dailyTasks.map((task, index) => (
+              <HabitCard
+                key={task.key}
+                task={task}
+                done={todaySet.has(task.key)}
+                burst={burstKey === task.key}
+                index={index}
+                userId={me?.id}
+                dots={habitChain(mine, task.key, today)}
+                pageLabel={task.key === "reading" ? (myBook ? pagePhrase(myBook.current_page) : "Укажите свою страницу") : undefined}
+                disabled={isLoading || !me}
+                onClick={() => onToggle(task, todaySet.has(task.key))}
+              />
+            ))}
           </div>
         </section>
 
@@ -128,30 +169,31 @@ function TodayPage() {
           <section>
             <h2 className="font-display mb-3 text-xl font-bold">На этой неделе</h2>
             <div className="space-y-3">
-              {weeklyTasks.map((t) => {
-                const weekCount = mine.filter((c) => c.task_key === t.key && c.completed_on >= ws && c.completed_on <= today).length;
-                const doneToday = todaySet.has(t.key);
-                const full = weekCount >= t.target;
+              {weeklyTasks.map((task) => {
+                const weekCount = mine.filter((c) => c.task_key === task.key && c.completed_on >= ws && c.completed_on <= today).length;
+                const doneToday = todaySet.has(task.key);
+                const full = weekCount >= task.target;
                 return (
-                  <div key={t.key} className={`rounded-2xl border p-4 shadow-card transition-all ${full ? "border-gold/60 bg-gradient-done" : "bg-card"}`}>
+                  <div key={task.key} className={`border p-4 ${full ? "border-gold bg-gold-soft" : "border-border bg-card"}`}>
                     <div className="flex items-center gap-3">
-                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gold-soft text-2xl">{t.emoji}</span>
+                      <CheckOrb done={doneToday || full} burst={burstKey === task.key} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-baseline justify-between gap-2">
-                          <h3 className="font-semibold">{t.title}</h3>
-                          <span className="text-sm font-bold text-primary">{weekCount}/{t.target}</span>
+                          <h3 className="font-semibold">{task.title}</h3>
+                          <span className="text-sm font-bold">{weekCount}/{task.target}</span>
                         </div>
-                        <p className="text-sm text-muted-foreground">{t.description} · +{t.points}</p>
+                        <IdentityField userId={me?.id} habitKey={task.key} habitTitle={task.title} />
+                        <p className="text-sm text-muted-foreground">{task.description} · +{task.points}</p>
                       </div>
                     </div>
-                    <Bar value={(weekCount / t.target) * 100} className="mt-3" />
+                    <Bar value={(weekCount / task.target) * 100} className="mt-3" />
                     <div className="mt-3">
                       {doneToday ? (
-                        <Button variant="undo" size="xl" className="w-full" onClick={() => onToggle(t, true)}>Отменить</Button>
+                        <Button variant="undo" size="xl" className="w-full" onClick={() => onToggle(task, true)}>Отменить</Button>
                       ) : (
                         <Button variant={full ? "undo" : "hero"} size="xl" className="w-full" disabled={full || isLoading}
-                          onClick={() => onToggle(t, false)}>
-                          {full ? "Цель недели достигнута ✓" : "Выполнено"}
+                          onClick={() => onToggle(task, false)}>
+                          {full ? "Цель недели достигнута" : "Выполнено"}
                         </Button>
                       )}
                     </div>
@@ -169,68 +211,49 @@ function TodayPage() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between rounded-xl bg-primary-foreground/10 px-3 py-1.5">
-      <span className="text-xs opacity-80">{label}</span>
-      <span className="font-bold">{value}</span>
+    <div className="flex items-center justify-between border border-border px-3 py-1.5">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="font-semibold">{value}</span>
     </div>
   );
 }
 
-function ReadingTaskCard({ task, done, index, pageLabel, disabled, onClick }: {
+function HabitCard({ task, done, burst, index, userId, dots, pageLabel, disabled, onClick }: {
   task: TaskDef;
   done: boolean;
+  burst: boolean;
   index: number;
-  pageLabel: string;
+  userId: string | undefined;
+  dots: { date: string; on: boolean }[];
+  pageLabel: string | undefined;
   disabled: boolean;
   onClick: () => void;
 }) {
   return (
-    <div
-      className={`animate-fade-up rounded-2xl border p-3.5 shadow-card transition-all duration-300 ${done ? "border-gold/60 bg-gradient-done" : "bg-card"}`}
+    <article
+      className={`animate-fade-up border p-4 ${done ? "border-gold bg-gold-soft/70" : "border-border bg-card"}`}
       style={{ animationDelay: `${index * 40}ms` }}
     >
-      <div className="flex items-center gap-3">
-        <span className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl ${done ? "bg-primary" : "bg-secondary"}`}>
-          {done ? <span className="animate-pop text-xl font-bold text-primary-foreground">✓</span> : task.emoji}
-        </span>
+      <div className="flex items-start gap-3">
+        <CheckOrb done={done} burst={burst} />
         <div className="min-w-0 flex-1">
-          <h3 className={`font-semibold ${done ? "text-primary" : ""}`}>{task.title}</h3>
-          <p className="text-sm leading-snug text-muted-foreground">{task.description}</p>
-          <p className="text-sm font-semibold text-primary">{pageLabel}</p>
+          <h3 className="font-semibold">{task.emoji} {task.title}</h3>
+          <IdentityField userId={userId} habitKey={task.key} habitTitle={task.title} />
+          <p className="mt-1 text-sm text-muted-foreground">{task.description}</p>
+          {pageLabel && <p className="mt-1 text-sm font-medium">{pageLabel}</p>}
+          <div className="mt-3"><HabitDots dots={dots} /></div>
         </div>
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <Button asChild variant="gold" size="xl" className="px-2">
-          <Link to="/book">Моя книга</Link>
-        </Button>
-        {done ? (
-          <Button variant="undo" size="xl" className="px-2" onClick={onClick} disabled={disabled}>Отменить</Button>
-        ) : (
-          <Button variant="hero" size="xl" className="px-2" onClick={onClick} disabled={disabled}>Выполнено</Button>
+      <div className={`mt-3 grid gap-2 ${pageLabel ? "grid-cols-2" : "grid-cols-1"}`}>
+        {pageLabel && (
+          <Button asChild variant="outline" size="xl" className="px-2">
+            <Link to="/book">Моя книга</Link>
+          </Button>
         )}
+        <Button variant={done ? "undo" : "hero"} size="xl" className="px-2" onClick={onClick} disabled={disabled}>
+          {done ? "Отменить" : "Выполнено"}
+        </Button>
       </div>
-    </div>
-  );
-}
-
-function TaskCard({ task, done, index, disabled, onClick }: { task: TaskDef; done: boolean; index: number; disabled: boolean; onClick: () => void }) {
-  return (
-    <div
-      className={`animate-fade-up flex items-center gap-3 rounded-2xl border p-3.5 shadow-card transition-all duration-300 ${done ? "border-gold/60 bg-gradient-done" : "bg-card"}`}
-      style={{ animationDelay: `${index * 40}ms` }}
-    >
-      <span className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl ${done ? "bg-primary" : "bg-secondary"}`}>
-        {done ? <span className="animate-pop text-xl font-bold text-primary-foreground">✓</span> : task.emoji}
-      </span>
-      <div className="min-w-0 flex-1">
-        <h3 className={`font-semibold ${done ? "text-primary" : ""}`}>{task.title}</h3>
-        <p className="text-sm leading-snug text-muted-foreground">{task.description}</p>
-      </div>
-      {done ? (
-        <Button variant="undo" size="xl" className="px-4" onClick={onClick} disabled={disabled}>Отменить</Button>
-      ) : (
-        <Button variant="hero" size="xl" className="px-4" onClick={onClick} disabled={disabled}>Выполнено</Button>
-      )}
-    </div>
+    </article>
   );
 }

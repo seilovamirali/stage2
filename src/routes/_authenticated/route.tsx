@@ -18,10 +18,10 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 const TABS = [
-  { to: "/today", label: "Сегодня", icon: "☀️" },
-  { to: "/leaderboard", label: "Рейтинг", icon: "🏆" },
-  { to: "/book", label: "Книга", icon: "📚" },
-  { to: "/profile", label: "Профиль", icon: "👤" },
+  { to: "/today", label: "Сегодня" },
+  { to: "/leaderboard", label: "Рейтинг" },
+  { to: "/book", label: "Книга" },
+  { to: "/profile", label: "Профиль" },
 ] as const;
 
 function AppLayout() {
@@ -30,20 +30,18 @@ function AppLayout() {
       <div className="mx-auto max-w-lg">
         <Outlet />
       </div>
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">
         <div className="mx-auto grid max-w-lg grid-cols-4">
           {TABS.map((t) => (
             <Link
               key={t.to}
               to={t.to}
-              className="flex flex-col items-center gap-0.5 px-0.5 py-2 text-[11px] font-medium leading-tight text-muted-foreground transition-colors"
-              activeProps={{ className: "text-primary" }}
+              className="flex flex-col items-center gap-1 px-1 py-3 text-[11px] font-semibold tracking-wide text-muted-foreground"
+              activeProps={{ className: "text-foreground" }}
             >
               {({ isActive }) => (
                 <>
-                  <span className={`flex h-8 w-10 items-center justify-center rounded-full text-lg transition-all ${isActive ? "bg-secondary scale-105" : ""}`}>
-                    {t.icon}
-                  </span>
+                  <span className={`size-1.5 rounded-full ${isActive ? "bg-gold" : "bg-transparent"}`} />
                   {t.label}
                 </>
               )}

@@ -34,12 +34,11 @@ function BookPage() {
 
   return (
     <div>
-      <header className="relative overflow-hidden rounded-b-[2rem] bg-gradient-hero px-5 pb-7 pt-8 text-primary-foreground">
-        <div className="bg-pattern absolute inset-0 opacity-40" />
-        <div className="relative">
-          <p className="mb-2 text-sm opacity-80">Stage 2</p>
-          <h1 className="font-display text-3xl font-bold">Книга</h1>
-          <p className="mt-2 text-base opacity-90">У каждого своя книга. Отметьте, где вы остановились.</p>
+      <header className="px-5 pb-2 pt-8">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gold">Stage 2</p>
+          <h1 className="font-display mt-2 text-3xl font-bold">Книга</h1>
+          <p className="mt-2 text-sm text-muted-foreground">У каждого своя книга. Отметьте, где вы остановились.</p>
           {mine && (
             <p className="mt-4 text-lg font-semibold">{pagePhrase(mine.current_page)}</p>
           )}

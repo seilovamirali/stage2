@@ -7,8 +7,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { meQuery, useGroup, useHabits, useToday } from "@/hooks/use-habits";
+import { ChainGrid, CompoundChart, IdentityField } from "@/components/Atomic";
+import { compoundSeries, dayChain } from "@/lib/atomic";
 import {
-  ALL_TASKS, activeDaily, addDays, bestStreak, computeBadges, computePoints, currentStreak, dailyByDay, levelInfo,
+  ALL_TASKS, activeTasks, bestStreak, computeBadges, computePoints, currentStreak, levelInfo,
 } from "@/lib/habits";
 
 export const Route = createFileRoute("/_authenticated/profile")({
@@ -23,7 +25,6 @@ function ProfilePage() {
   const habitsQ = useHabits();
   const today = useToday();
   const tasks = habitsQ.data ?? ALL_TASKS;
-  const dailyCount = activeDaily(tasks).length;
   const qc = useQueryClient();
   const navigate = useNavigate();
   const profile = data?.profiles.find((p) => p.id === me?.id);
@@ -35,11 +36,11 @@ function ProfilePage() {
   }, [profile?.id, profile?.display_name, profile?.avatar_emoji]);
 
   const mine = useMemo(() => (data?.completions ?? []).filter((c) => c.user_id === me?.id), [data, me]);
+  const curve = useMemo(() => compoundSeries(mine, today, tasks), [mine, tasks, today]);
+  const chain = useMemo(() => dayChain(mine, today, tasks), [mine, tasks, today]);
   const points = computePoints(mine, "0000-01-01", "9999-12-31", tasks);
   const lvl = levelInfo(points);
   const badges = computeBadges(mine, tasks);
-  const byDay = dailyByDay(mine, tasks);
-  const days = Array.from({ length: 30 }, (_, i) => addDays(today, i - 29));
 
   const save = async () => {
     if (!me || !name.trim()) return;
@@ -59,6 +60,7 @@ function ProfilePage() {
 
   return (
     <div className="space-y-6 px-4 pt-6">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gold">Stage 2</p>
       <h1 className="font-display text-3xl font-bold">Профиль</h1>
 
       <section className="rounded-3xl border bg-card p-4 shadow-card">
@@ -82,39 +84,32 @@ function ProfilePage() {
         </Button>
       </section>
 
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-hero p-5 text-primary-foreground">
-        <div className="bg-pattern absolute inset-0 opacity-50" />
-        <div className="relative">
-          <p className="text-sm opacity-80">Уровень {lvl.level}</p>
-          <p className="font-display text-2xl font-bold">{lvl.title}</p>
-          <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-primary-foreground/20">
-            <div className="h-full rounded-full bg-gradient-gold" style={{ width: `${lvl.progress}%` }} />
-          </div>
-          <p className="mt-1 text-xs opacity-80">{points} / {lvl.nextMin} очков до следующего уровня</p>
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            <Tile label="Всего очков" value={points} />
-            <Tile label="Выполнено" value={mine.length} />
-            <Tile label="Серия сейчас" value={`🔥 ${currentStreak(mine, today, tasks)}`} />
-            <Tile label="Лучшая серия" value={`🏅 ${bestStreak(mine, tasks)}`} />
-          </div>
+      <section className="border border-border bg-card p-5">
+        <p className="text-sm text-muted-foreground">Уровень {lvl.level}</p>
+        <p className="font-display text-2xl font-bold">{lvl.title}</p>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+          <div className="h-full rounded-full bg-gold" style={{ width: `${lvl.progress}%` }} />
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">{points} / {lvl.nextMin} очков до следующего уровня</p>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <Tile label="Всего очков" value={points} />
+          <Tile label="Выполнено" value={mine.length} />
+          <Tile label="Серия сейчас" value={String(currentStreak(mine, today, tasks))} />
+          <Tile label="Лучшая серия" value={String(bestStreak(mine, tasks))} />
         </div>
       </section>
 
-      <section>
-        <h2 className="font-display mb-3 text-xl font-bold">Последние 30 дней</h2>
-        <div className="grid grid-cols-10 gap-1.5 rounded-3xl border bg-card p-3 shadow-card">
-          {days.map((d) => {
-            const n = byDay.get(d) ?? 0;
-            const ratio = dailyCount === 0 ? 0 : n / dailyCount;
-            return (
-              <div key={d} title={`${d}: ${n}/${dailyCount}`}
-                className={`flex aspect-square items-center justify-center rounded-md text-[10px] font-semibold ${d === today ? "ring-2 ring-gold" : ""} ${ratio === 0 ? "bg-muted text-muted-foreground" : "bg-primary text-primary-foreground"}`}
-                style={ratio > 0 ? { opacity: 0.3 + ratio * 0.7 } : undefined}>
-                {Number(d.slice(8))}
-              </div>
-            );
-          })}
-        </div>
+      <CompoundChart points={curve} />
+      <ChainGrid dots={chain} />
+
+      <section className="space-y-3">
+        <h2 className="font-display text-xl font-bold">Кто я</h2>
+        {activeTasks(tasks).map((task) => (
+          <label key={task.key} className="block border border-border bg-card px-3 py-3">
+            <span className="text-sm font-semibold">{task.emoji} {task.title}</span>
+            <IdentityField userId={me?.id} habitKey={task.key} habitTitle={task.title} />
+          </label>
+        ))}
       </section>
 
       <section>
@@ -140,8 +135,8 @@ function ProfilePage() {
 
 function Tile({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-xl bg-primary-foreground/10 p-3">
-      <p className="text-xs opacity-80">{label}</p>
+    <div className="border border-border p-3">
+      <p className="text-xs text-muted-foreground">{label}</p>
       <p className="font-display text-xl font-bold">{value}</p>
     </div>
   );

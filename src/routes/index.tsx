@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { AtomMark } from "@/components/Atomic";
 import { DAILY_TASKS } from "@/lib/habits";
 
 export const Route = createFileRoute("/")({
@@ -18,39 +19,34 @@ function Landing() {
 
   return (
     <div className="min-h-screen bg-background">
-      <section className="relative overflow-hidden rounded-b-[2.5rem] bg-gradient-hero px-5 pb-12 pt-14 text-primary-foreground">
-        <div className="bg-pattern absolute inset-0 opacity-60" />
-        <div className="relative mx-auto max-w-lg text-center">
-          <span className="text-5xl">📚💪</span>
-          <h1 className="font-display mt-3 text-5xl font-bold">Stage 2</h1>
-          <p className="mx-auto mt-4 max-w-sm text-lg opacity-90">
-            Книга и спорт. Отмечайте привычки вместе с группой и смотрите, кто держит темп.
-          </p>
-          <Button asChild variant="gold" size="xl" className="mt-8 w-full max-w-xs">
-            <Link to="/auth">Присоединиться</Link>
-          </Button>
-        </div>
-      </section>
+      <div className="mx-auto max-w-lg px-6 pb-16 pt-14">
+        <AtomMark />
+        <p className="mt-6 text-[11px] font-semibold uppercase tracking-[0.2em] text-gold">Stage 2</p>
+        <h1 className="font-display mt-3 text-5xl font-bold leading-[1.05]">1% лучше каждый день</h1>
+        <p className="mt-4 max-w-sm text-base leading-relaxed text-muted-foreground">
+          Книга и спорт. Маленькие повторения складываются в другого человека — и в гонку с друзьями.
+        </p>
+        <Button asChild variant="hero" size="xl" className="mt-8 w-full">
+          <Link to="/auth">Присоединиться</Link>
+        </Button>
 
-      <div className="mx-auto max-w-lg space-y-6 px-5 py-8">
-        <div className="grid grid-cols-3 gap-2 text-center">
-          {[["✨", "Очки и уровни"], ["🔥", "Серии дней"], ["🏆", "Рейтинг группы"]].map(([e, t]) => (
-            <div key={t} className="rounded-2xl border bg-card p-3 shadow-card">
-              <div className="text-2xl">{e}</div>
-              <div className="mt-1 text-xs font-semibold">{t}</div>
-            </div>
+        <ul className="mt-14 divide-y divide-border border-y border-border">
+          {DAILY_TASKS.map((task) => (
+            <li key={task.key} className="flex items-baseline justify-between gap-4 py-4">
+              <span>
+                <span className="font-semibold">{task.title}</span>
+                <span className="mt-1 block text-sm text-muted-foreground">{task.description}</span>
+              </span>
+              <span className="text-xl" aria-hidden>{task.emoji}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-8 grid grid-cols-3 gap-3 text-sm">
+          {["1% в день", "Цепочка", "Трасса"].map((item) => (
+            <p key={item} className="border border-border px-2 py-3 text-center text-xs font-semibold">{item}</p>
           ))}
         </div>
-        <div className="rounded-3xl border bg-card p-5 shadow-card">
-          <h2 className="font-display text-xl font-bold">Каждый день</h2>
-          <ul className="mt-3 space-y-2">
-            {DAILY_TASKS.map((t) => (
-              <li key={t.key} className="flex items-center gap-3 text-sm"><span className="text-xl">{t.emoji}</span><b>{t.title}</b><span className="text-muted-foreground">{t.description}</span></li>
-            ))}
-          </ul>
-          <p className="mt-4 text-sm text-muted-foreground">Участники могут добавить и другие привычки: на каждый день или несколько раз в неделю.</p>
-        </div>
-        <p className="text-center text-sm text-muted-foreground">Stage 2 · книга и спорт</p>
+        <p className="mt-8 text-sm text-muted-foreground">Участники могут добавить свои привычки: каждый день или несколько раз в неделю.</p>
       </div>
     </div>
   );

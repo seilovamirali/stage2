@@ -10,8 +10,8 @@ export function BookTeaser({ userId }: { userId: string | undefined }) {
   const title = mine?.book_title?.trim() || "Укажите свою книгу";
   const page = mine?.current_page ?? 0;
   return (
-    <section className="flex items-center gap-4 rounded-2xl border border-gold/40 bg-card p-4 shadow-card">
-      <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gold-soft text-3xl" aria-hidden>📚</span>
+    <section className="flex items-center gap-4 border border-border bg-card p-4">
+      <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-foreground/15 text-2xl" aria-hidden>📚</span>
       <div className="min-w-0 flex-1">
         <h2 className="font-display text-lg font-bold">Моя книга</h2>
         <p className="mt-1 truncate text-sm text-muted-foreground">{title}</p>

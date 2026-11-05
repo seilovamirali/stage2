@@ -7,8 +7,8 @@
 
 @theme inline {
   --font-sans: "Manrope", system-ui, sans-serif;
-  --font-display: "Playfair Display", Georgia, serif;
-  --font-arabic: "Amiri", "Scheherazade New", serif;
+  --font-display: "Unbounded", "Manrope", sans-serif;
+  --font-arabic: "Manrope", sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -59,39 +59,39 @@
 }
 
 :root {
-  --radius: 1rem;
-  --background: oklch(0.97 0.018 88);
-  --foreground: oklch(0.26 0.05 168);
-  --card: oklch(0.99 0.01 90);
-  --card-foreground: oklch(0.26 0.05 168);
-  --popover: oklch(0.99 0.01 90);
-  --popover-foreground: oklch(0.26 0.05 168);
-  --primary: oklch(0.44 0.09 168);
-  --primary-foreground: oklch(0.98 0.015 90);
-  --secondary: oklch(0.93 0.03 160);
-  --secondary-foreground: oklch(0.3 0.06 168);
-  --muted: oklch(0.93 0.02 88);
-  --muted-foreground: oklch(0.5 0.03 165);
-  --accent: oklch(0.92 0.05 85);
-  --accent-foreground: oklch(0.3 0.06 168);
-  --destructive: oklch(0.57 0.2 27);
-  --destructive-foreground: oklch(0.98 0.01 90);
-  --border: oklch(0.88 0.03 88);
-  --input: oklch(0.88 0.03 88);
-  --ring: oklch(0.72 0.12 80);
-  --gold: oklch(0.76 0.13 80);
-  --gold-foreground: oklch(0.25 0.05 70);
-  --gold-soft: oklch(0.94 0.05 85);
-  --emerald-deep: oklch(0.3 0.07 170);
-  --done: oklch(0.93 0.06 155);
+  --radius: 0.9rem;
+  --background: #f6f3ee;
+  --foreground: #1c1c1c;
+  --card: #fffdfb;
+  --card-foreground: #1c1c1c;
+  --popover: #fffdfb;
+  --popover-foreground: #1c1c1c;
+  --primary: #1c1c1c;
+  --primary-foreground: #f6f3ee;
+  --secondary: #efeae3;
+  --secondary-foreground: #1c1c1c;
+  --muted: #efeae3;
+  --muted-foreground: #6d675f;
+  --accent: #f4e4d4;
+  --accent-foreground: #1c1c1c;
+  --destructive: #9f3a24;
+  --destructive-foreground: #fffdfb;
+  --border: #e3ddd4;
+  --input: #e3ddd4;
+  --ring: #e07a2f;
+  --gold: #e07a2f;
+  --gold-foreground: #1c1c1c;
+  --gold-soft: #f8eadc;
+  --emerald-deep: #1c1c1c;
+  --done: #f8eadc;
 
-  --gradient-primary: linear-gradient(135deg, oklch(0.42 0.09 170), oklch(0.52 0.1 160));
-  --gradient-gold: linear-gradient(135deg, oklch(0.82 0.12 88), oklch(0.72 0.14 72));
-  --gradient-hero: linear-gradient(160deg, oklch(0.3 0.07 170), oklch(0.4 0.09 165) 60%, oklch(0.45 0.09 155));
-  --gradient-done: linear-gradient(135deg, oklch(0.93 0.06 155), oklch(0.93 0.07 88));
-  --shadow-elegant: 0 10px 30px -12px color-mix(in oklab, var(--primary) 45%, transparent);
-  --shadow-gold: 0 8px 24px -10px color-mix(in oklab, var(--gold) 70%, transparent);
-  --shadow-card: 0 4px 20px -8px color-mix(in oklab, var(--emerald-deep) 18%, transparent);
+  --gradient-primary: linear-gradient(#1c1c1c, #1c1c1c);
+  --gradient-gold: linear-gradient(#e07a2f, #e07a2f);
+  --gradient-hero: linear-gradient(#f6f3ee, #f6f3ee);
+  --gradient-done: linear-gradient(#fff8f1, #fff8f1);
+  --shadow-elegant: none;
+  --shadow-gold: none;
+  --shadow-card: none;
 
   --chart-1: oklch(0.55 0.1 165);
   --chart-2: oklch(0.76 0.13 80);
@@ -118,10 +118,9 @@
 @utility font-display { font-family: var(--font-display); }
 @utility font-arabic { font-family: var(--font-arabic); }
 
-/* Eight-point star geometric pattern */
 @utility bg-pattern {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%23d4a843' stroke-opacity='0.28' stroke-width='1'%3E%3Crect x='16' y='16' width='24' height='24'/%3E%3Crect x='16' y='16' width='24' height='24' transform='rotate(45 28 28)'/%3E%3Ccircle cx='28' cy='28' r='5'/%3E%3C/g%3E%3C/svg%3E");
-  background-size: 56px 56px;
+  background-image: radial-gradient(rgba(28, 28, 28, 0.16) 1.1px, transparent 1.2px);
+  background-size: 16px 16px;
 }
 
 @keyframes accordion-down {
@@ -132,24 +131,67 @@
   from { height: var(--radix-accordion-content-height); }
   to { height: 0; }
 }
-@keyframes pop-in { 0% { transform: scale(0.6); opacity: 0 } 70% { transform: scale(1.15) } 100% { transform: scale(1); opacity: 1 } }
+@keyframes pop-in { 0% { transform: scale(0.6); opacity: 0 } 55% { transform: scale(1.16) } 100% { transform: scale(1); opacity: 1 } }
 @keyframes fade-up { from { transform: translateY(10px); opacity: 0 } to { transform: none; opacity: 1 } }
 @keyframes confetti-fall {
-  0% { transform: translate3d(0, -10vh, 0) rotate(0); opacity: 1 }
-  100% { transform: translate3d(var(--dx, 0), 100vh, 0) rotate(720deg); opacity: 0 }
+  0% { transform: translate3d(0, -10vh, 0); opacity: 1 }
+  100% { transform: translate3d(var(--dx, 0), 100vh, 0); opacity: 0 }
 }
-@utility animate-pop { animation: pop-in 0.4s cubic-bezier(.2,.9,.3,1.3) both; }
+@keyframes check-pop { 0% { transform: scale(0.82) } 45% { transform: scale(1.14) } 100% { transform: scale(1) } }
+@keyframes ring-out { 0% { opacity: 0.9; transform: scale(0.4) } 100% { opacity: 0; transform: scale(1.85) } }
+@keyframes race-bob { 0%, 100% { transform: translateY(-50%) } 50% { transform: translateY(calc(-50% - 2px)) } }
+@utility animate-pop { animation: pop-in 0.45s cubic-bezier(.2,.8,.2,1.25) both; }
 @utility animate-fade-up { animation: fade-up 0.45s ease-out both; }
-@utility animate-confetti { animation: confetti-fall 2.6s ease-in forwards; }
+@utility animate-confetti { animation: confetti-fall 2.4s ease-in forwards; }
+@utility animate-check { animation: check-pop 0.48s cubic-bezier(.2,.8,.2,1.3); }
 
 @layer base {
   * { border-color: var(--color-border); }
   html { -webkit-tap-highlight-color: transparent; }
   body {
     background-color: var(--color-background);
+    background-image: radial-gradient(rgba(28, 28, 28, 0.09) 1px, transparent 1.15px);
+    background-size: 22px 22px;
     color: var(--color-foreground);
     font-family: var(--font-sans);
   }
+  h1, h2, .font-display { letter-spacing: -0.03em; }
+}
+
+.race-vehicle { transition: left 0.9s cubic-bezier(.22, .8, .24, 1); }
+.race-bob { animation: race-bob 1.8s ease-in-out infinite; }
+.atom-ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 999px;
+  border: 1.5px solid var(--gold);
+  animation: ring-out 0.6s ease-out forwards;
+}
+.atom-ring::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  margin: -2.5px;
+  border-radius: 999px;
+  background: var(--gold);
+  box-shadow: 18px 0 0 var(--gold), -18px 0 0 var(--gold), 0 18px 0 var(--gold), 0 -18px 0 var(--gold);
+  animation: ring-out 0.55s ease-out forwards;
+}
+.checkered {
+  background-color: #f6f3ee;
+  background-image:
+    linear-gradient(45deg, #1c1c1c 25%, transparent 25%),
+    linear-gradient(-45deg, #1c1c1c 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #1c1c1c 75%),
+    linear-gradient(-45deg, transparent 75%, #1c1c1c 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .race-vehicle, .race-bob, .animate-check, .atom-ring, .atom-ring::after { animation: none; transition: none; }
 }
 
 

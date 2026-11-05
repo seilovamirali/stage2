@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AtomMark } from "@/components/Atomic";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
@@ -54,15 +55,14 @@ function AuthPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-gradient-hero px-4 py-10 text-primary-foreground">
-      <div className="bg-pattern absolute inset-0 opacity-50" />
-      <div className="relative mx-auto max-w-sm">
-        <div className="text-center">
-          <span className="text-5xl">📚💪</span>
-          <h1 className="font-display mt-2 text-4xl font-bold">Stage 2</h1>
-          <p className="mt-1 text-sm opacity-80">Книга и спорт</p>
+    <div className="min-h-screen bg-background px-4 py-12 text-foreground">
+      <div className="mx-auto max-w-sm">
+        <div>
+          <AtomMark />
+          <h1 className="font-display mt-6 text-4xl font-bold">Stage 2</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Книга и спорт</p>
         </div>
-        <div className="mt-8 rounded-3xl bg-card p-5 text-card-foreground shadow-elegant">
+        <div className="mt-8 border border-border bg-card p-5">
           <div className="grid grid-cols-2 gap-1 rounded-2xl bg-muted p-1">
             {(["in", "up"] as const).map((m) => (
               <button key={m} type="button" onClick={() => setMode(m)}
