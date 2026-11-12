@@ -274,15 +274,7 @@ export interface MonthRace {
   plannedToday: number;
 }
 
-function timesOn(list: readonly Completion[], key: string, date: string): number {
-  let best = 0;
-  for (const row of list) {
-    if (row.task_key === key && row.completed_on === date) best = Math.max(best, markTimes(row));
-  }
-  return best;
-}
-
-/** Position = days advanced − penalties + recovered. A missed day (after it ends) costs 2 days, never past the start. An x2 day moves +1 and, while a debt remains, recovers one more day. */
+/** One point per finished habit. The car sits at points / every habit across the whole month. No rollback. */
 export function monthRace(
   list: readonly Completion[],
   tasks: readonly TaskDef[],
@@ -296,76 +288,54 @@ export function monthRace(
   const daysLeft = past ? 0 : today < monthStartDate ? daysInMonth : diffDays(monthEnd, today);
   const daily = activeDaily(tasks);
   const joined = memberSince?.slice(0, 10);
-  let position = 0;
-  let debt = 0;
+  const asOf = past ? monthEnd : today < monthStartDate ? monthStartDate : today;
+  const points = list.filter((row) => row.completed_on >= monthStartDate && row.completed_on <= asOf && daily.some((task) => task.key === row.task_key)).length;
+  const maxPoints = daily.length * daysInMonth;
   const days: RaceDay[] = [];
-  let doubledToday = 0;
-  let plannedToday = daily.length;
+  let running = 0;
   for (let index = 0; index < daysInMonth; index++) {
     const date = addDays(monthStartDate, index);
     let status: RaceStatus = "future";
     let delta = 0;
     if (joined && date < joined) status = "before";
     else if (!past && date > today) status = "future";
-    else if (daily.length === 0) {
-      status = "free";
-      position += 1;
-      delta = 1;
-    } else {
-      let done = 0;
-      let doubled = 0;
-      for (const task of daily) {
-        const times = timesOn(list, task.key, date);
-        if (times >= 1) done += 1;
-        if (times >= 2) doubled += 1;
-      }
+    else if (daily.length === 0) status = "free";
+    else {
+      const done = daily.filter((task) => list.some((row) => row.task_key === task.key && row.completed_on === date)).length;
       const ended = past || date < today;
-      if (date === today && !past) {
-        doubledToday = doubled;
-        plannedToday = daily.length;
-      }
-      if (doubled === daily.length) {
-        status = "double";
-        position += 1;
-        delta = 1;
-        if (debt > 0) {
-          debt -= 1;
-          position += 1;
-          delta = 2;
-        }
-      } else if (done === daily.length) {
+      if (done >= daily.length) {
         status = "done";
-        position += 1;
-        delta = 1;
+        delta = done;
+        running += done;
       } else if (ended) {
-        status = "miss";
-        debt += 2;
-        const next = position - 2;
-        position = next < 0 ? 0 : next;
-        delta = -2;
-      } else status = "pending";
+        status = done > 0 ? "done" : "miss";
+        delta = done;
+        running += done;
+      } else {
+        status = "pending";
+        delta = done;
+        running += done;
+      }
     }
-    if (position > daysInMonth) position = daysInMonth;
-    days.push({ date, status, position, debt, delta });
+    days.push({ date, status, position: running, debt: 0, delta });
   }
-  const asOf = past ? monthEnd : today < monthStartDate ? monthStartDate : today;
   const pace = periodScore(list, monthStartDate, asOf, tasks);
   return {
     days,
-    positionDays: position,
-    positionPct: daysInMonth <= 0 ? 0 : Math.round((position / daysInMonth) * 100),
-    debt,
+    positionDays: points,
+    positionPct: maxPoints <= 0 ? 0 : Math.min(100, Math.round((points / maxPoints) * 100)),
+    debt: 0,
     pace,
     daysInMonth,
     daysLeft,
     past,
-    doubledToday,
-    plannedToday,
+    doubledToday: 0,
+    plannedToday: daily.length,
   };
 }
 
 export function defaultIdentity(task: { key: string; title: string }): string {
-  if (task.key === "reading") return "Я — человек, который читает каждый день";
+  if (task.key === "book") return "Я — человек, который читает каждый день";
   if (task.key === "sport") return "Я — человек, который тренируется каждый день";
   const title = task.title.trim() || "это";
   return `Я — человек, для которого «${title}» — часть дня`;

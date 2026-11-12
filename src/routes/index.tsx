@@ -46,7 +46,7 @@ function Landing() {
             <p key={item} className="border border-border px-2 py-3 text-center text-xs font-semibold">{item}</p>
           ))}
         </div>
-        <p className="mt-8 text-sm text-muted-foreground">Участники могут добавить свои привычки: каждый день или несколько раз в неделю.</p>
+        <p className="mt-8 text-sm text-muted-foreground">Список один для всей группы. Одно задание — одно очко.</p>
       </div>
     </div>
   );

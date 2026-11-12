@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { meQuery, useGroup, useToday, useUserHabits } from "@/hooks/use-habits";
+import { meQuery, useGroup, useHabits, useToday } from "@/hooks/use-habits";
 import { Bar } from "@/components/ProgressRing";
 import { Button } from "@/components/ui/button";
 import { CompoundChart } from "@/components/Atomic";
 import { RaceHistory, RaceRules, RaceTrack, type Racer } from "@/components/Race";
 import { compoundSeries, daysLeftPhrase, monthRace, monthTitle, monthWindow, shiftMonth } from "@/lib/atomic";
-import { activeDaily, computePoints, currentStreak, markTimes } from "@/lib/habits";
+import { ALL_TASKS, activeDaily, computePoints, currentStreak } from "@/lib/habits";
 
 export const Route = createFileRoute("/_authenticated/leaderboard")({
   component: LeaderboardPage,
@@ -17,7 +17,8 @@ function LeaderboardPage() {
   const { data: me } = useQuery(meQuery);
   const group = useGroup();
   const { data, isLoading } = group;
-  const habitsQ = useUserHabits();
+  const habitsQ = useHabits();
+  const tasks = habitsQ.data ?? ALL_TASKS;
   const today = useToday();
   const current = monthWindow(today);
   const [monthStartDate, setMonthStartDate] = useState(current.start);
@@ -30,23 +31,21 @@ function LeaderboardPage() {
     return data.profiles
       .map((person) => {
         const list = data.completions.filter((row) => row.user_id === person.id);
-        const own = (habitsQ.data ?? []).filter((habit) => habit.userId === person.id);
-        const race = monthRace(list, own, month.start, month.end, past ? month.end : today, person.created_at);
-        const daily = activeDaily(own);
+        const race = monthRace(list, tasks, month.start, month.end, past ? month.end : today, person.created_at);
+        const daily = activeDaily(tasks);
         const todayDone = new Set(list.filter((row) => row.completed_on === today && daily.some((task) => task.key === row.task_key)).map((row) => row.task_key));
         return {
           ...person,
-          own,
           daily,
           race,
-          points: computePoints(list, month.start, asOf, own),
-          streak: currentStreak(list, today, own),
+          points: computePoints(list, month.start, asOf, tasks),
+          streak: currentStreak(list, today, tasks),
           todayDone,
           list,
         };
       })
-      .sort((a, b) => b.race.positionDays - a.race.positionDays || b.race.pace.pct - a.race.pace.pct || b.points - a.points || a.display_name.localeCompare(b.display_name, "ru"));
-  }, [asOf, data, habitsQ.data, month.end, month.start, past, today]);
+      .sort((a, b) => b.points - a.points || b.race.pace.pct - a.race.pace.pct || a.display_name.localeCompare(b.display_name, "ru"));
+  }, [asOf, data, month.end, month.start, past, tasks, today]);
 
   const winner = past ? rows[0] : undefined;
   const meRow = rows.find((row) => row.id === me?.id);
@@ -93,8 +92,8 @@ function LeaderboardPage() {
               <h2 className="font-display mb-3 text-xl font-bold">История месяца</h2>
               <RaceHistory days={meRow.race.days} />
               <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
-                {meRow.race.days.filter((day) => day.status === "miss" || day.status === "double").map((day) => (
-                  <li key={day.date}>{day.date.slice(8)}.{month.start.slice(5, 7)} · {day.status === "miss" ? "штраф −2 дня" : day.delta === 2 ? "x2, возврат +1" : "x2"}</li>
+                {meRow.race.days.filter((day) => day.delta > 0).map((day) => (
+                  <li key={day.date}>{day.date.slice(8)}.{month.start.slice(5, 7)} · {day.delta} оч.</li>
                 ))}
               </ul>
             </section>
@@ -110,12 +109,12 @@ function LeaderboardPage() {
                     <span className="text-2xl">{racer.avatar_emoji}</span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-semibold">{racer.display_name}</p>
-                      <p className="text-xs text-muted-foreground">темп {racer.race.pace.pct}% · {racer.race.positionDays}/{racer.race.daysInMonth} дн.{racer.race.debt > 0 ? ` · штраф −${racer.race.debt}` : ""}</p>
+                      <p className="text-xs text-muted-foreground">темп {racer.race.pace.pct}% · {racer.points} оч.</p>
                     </div>
                     <span className="font-display text-lg font-bold">{racer.points}</span>
                   </div>
                   <div className="mt-2">
-                    <CompoundChart compact points={compoundSeries(racer.list, today, racer.own)} />
+                    <CompoundChart compact points={compoundSeries(racer.list, today, tasks)} />
                   </div>
                 </li>
               ))}
@@ -137,7 +136,7 @@ function LeaderboardPage() {
                       <span key={task.key} title={task.title} className={`flex h-7 w-7 items-center justify-center rounded-lg text-sm ${racer.todayDone.has(task.key) ? "bg-done" : "bg-muted opacity-40 grayscale"}`}>{task.emoji}</span>
                     ))}
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground">Серия {racer.streak} · отметки {racer.list.reduce((sum, row) => sum + markTimes(row), 0)}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Серия {racer.streak}</p>
                 </li>
               ))}
             </ul>

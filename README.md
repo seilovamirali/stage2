@@ -8,7 +8,7 @@
 
 ## Миграция
 
-Сначала `supabase/migrations/20261105170000_stage2_club.sql`, затем `supabase/migrations/20261112150000_club_user_habits.sql`. Оба файла выполняются в SQL-редакторе Supabase от имени администратора и не трогают старые таблицы Habits. Второй создаёт личные копии привычек (`club_user_habits`) и колонку `times` для x2. Пока он не применён, списки привычек не загрузятся.
+Выполните по порядку в SQL-редакторе Supabase: `supabase/migrations/20261105170000_stage2_club.sql`, затем при необходимости `20261112150000_club_user_habits.sql`, затем `20261112200000_static_habits_reset.sql`. Последний оставляет ровно шесть общих привычек и обнуляет `club_completions`. Старые таблицы Habits и резервные `bak_20261112_*` он не трогает.
 
 Если в проекте включено подтверждение почты, добавьте `https://seilovamirali.github.io/stage2/` в Authentication → URL Configuration → Redirect URLs.
 

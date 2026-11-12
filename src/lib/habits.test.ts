@@ -12,10 +12,14 @@ const withWeekly: TaskDef[] = [
 ];
 
 describe("habits rules", () => {
-  it("ships the two club habits", () => {
-    expect(ALL_TASKS.map((task) => [task.key, task.title])).toEqual([
-      ["reading", "Книга"],
-      ["sport", "Спорт"],
+  it("ships the six shared habits", () => {
+    expect(ALL_TASKS.map((task) => [task.key, task.title, task.points])).toEqual([
+      ["book", "Книга", 1],
+      ["sport", "Спорт", 1],
+      ["language", "Иностранный язык", 1],
+      ["vitamin_c", "Витамин C", 1],
+      ["vitamin_e", "Витамин E", 1],
+      ["kk", "КК", 1],
     ]);
   });
   it("today uses Almaty timezone (UTC+5)", () => {
@@ -25,10 +29,10 @@ describe("habits rules", () => {
     expect(weekStart("2026-11-08")).toBe("2026-11-02"); // Sunday -> Monday
     expect(weekStart("2026-11-02")).toBe("2026-11-02");
   });
-  it("each habit is 10 points and a perfect day adds 20", () => {
-    expect(computePoints([{ user_id: "u", task_key: "reading", completed_on: "2026-11-02" }])).toBe(10);
-    expect(computePoints([{ user_id: "u", task_key: "sport", completed_on: "2026-11-02" }])).toBe(10);
-    expect(computePoints(day("2026-11-02"))).toBe(40);
+  it("each finished habit is one point and nothing is added on top", () => {
+    expect(computePoints([{ user_id: "u", task_key: "book", completed_on: "2026-11-02" }])).toBe(1);
+    expect(computePoints([{ user_id: "u", task_key: "sport", completed_on: "2026-11-02" }])).toBe(1);
+    expect(computePoints(day("2026-11-02"))).toBe(DAILY_TASKS.length);
   });
   it("streak counts from yesterday if today unfinished", () => {
     const list = [...day("2026-10-31"), ...day("2026-11-01")];
@@ -45,13 +49,22 @@ describe("habits rules", () => {
   it("period percent counts dailies per day and weekly targets per touched week", () => {
     const list = day("2026-11-02");
     expect(completionPct(list, "2026-11-02", "2026-11-02")).toBe(100);
-    expect(completionPct(list, "2026-11-02", "2026-11-02", withWeekly)).toBe(40);
-    expect(computePoints([{ user_id: "u", task_key: "extra", completed_on: "2026-11-02" }], "2026-11-02", "2026-11-02", withWeekly)).toBe(20);
+    const two: TaskDef[] = [
+      { key: "book", title: "Книга", description: "", emoji: "📚", kind: "daily", target: 1, points: 1 },
+      { key: "sport", title: "Спорт", description: "", emoji: "💪", kind: "daily", target: 1, points: 1 },
+      withWeekly[withWeekly.length - 1]!,
+    ];
+    const pair = [
+      { user_id: "u", task_key: "book", completed_on: "2026-11-02" },
+      { user_id: "u", task_key: "sport", completed_on: "2026-11-02" },
+    ];
+    expect(completionPct(pair, "2026-11-02", "2026-11-02", two)).toBe(40);
+    expect(computePoints([{ user_id: "u", task_key: "extra", completed_on: "2026-11-02" }], "2026-11-02", "2026-11-02", withWeekly)).toBe(1);
   });
   it("scores only active habits, so archiving one daily task changes the day", () => {
-    const tasks = ALL_TASKS.map((task) => task.key === "sport" ? { ...task, archived: true } : task);
-    const list = day("2026-11-02").filter((row) => row.task_key !== "sport");
-    expect(computePoints(list, "0000-01-01", "9999-12-31", tasks)).toBe(30);
+    const tasks = ALL_TASKS.map((task) => task.key === "kk" ? { ...task, archived: true } : task);
+    const list = day("2026-11-02").filter((row) => row.task_key !== "kk");
+    expect(computePoints(list, "0000-01-01", "9999-12-31", tasks)).toBe(5);
     expect(completionPct(list, "2026-11-02", "2026-11-02", tasks)).toBe(100);
   });
 });

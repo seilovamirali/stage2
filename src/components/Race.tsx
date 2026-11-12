@@ -210,7 +210,7 @@ export function MyRaceCard({
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">{daysLeftText}</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            {positionDays}/{daysInMonth} дн. · темп {pace}% · {points} оч. · место {place} из {total}
+            {points} оч. · темп {pace}% · место {place} из {total}
           </p>
         </div>
         <Vehicle kind={tier.id} className="h-14 w-24 shrink-0" />
@@ -226,8 +226,8 @@ export function MyRaceCard({
       </div>
       {debt > 0 && (
         <div className="mt-3 border border-gold bg-gold-soft px-3 py-2 text-sm">
-          <p className="font-semibold">Штраф: −{debt} {debt % 10 === 1 && debt % 100 !== 11 ? "день" : debt % 10 >= 2 && debt % 10 <= 4 && (debt % 100 < 12 || debt % 100 > 14) ? "дня" : "дней"}</p>
-          <p className="mt-1">Сделай x2 сегодня, чтобы отыграть</p>
+          <p className="font-semibold">Штрафов нет</p>
+          <p className="mt-1">Одно задание — одно очко</p>
           <p className="mt-1 text-muted-foreground">{doubled} из {planned} привычек удвоены</p>
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-background">
             <div className="h-full bg-gold" style={{ width: `${planned === 0 ? 0 : Math.round((doubled / planned) * 100)}%` }} />
@@ -244,11 +244,10 @@ export function RaceRules() {
     <section className="border border-border bg-card px-4 py-4 text-sm leading-relaxed">
       <h2 className="font-display text-lg font-bold">Правила гонки</h2>
       <ul className="mt-2 list-disc space-y-1 pl-4 text-muted-foreground">
-        <li>Трасса — календарный месяц: старт 1-го числа, финиш в последний день.</li>
-        <li>Закрыл свои ежедневные привычки — машина едет на 1 день вперёд.</li>
-        <li>День закончился без полного набора — штраф −2 дня, не дальше старта.</li>
-        <li>x2 (каждая ежедневная привычка дважды) возвращает 1 штрафной день, пока долг не погашен.</li>
-        <li>Позиция = дни вперёд − штрафы + отыгранное. Новый месяц гонка начинается сначала.</li>
+        <li>Привычки у всех одни: книга, спорт, иностранный язык, витамин C, витамин E и КК.</li>
+        <li>Одно выполненное задание — одно очко. Штрафов нет.</li>
+        <li>Трасса — календарный месяц, с 1-го числа до последнего. Место на треке — набранные очки.</li>
+        <li>Машина зависит от процента закрытых заданий. В новом месяце счёт начинается сначала.</li>
       </ul>
     </section>
   );
@@ -269,7 +268,7 @@ export function RaceHistory({ days }: { days: { date: string; status: string; de
             "border-foreground/10 text-muted-foreground"
           }`}
         >
-          {day.status === "miss" ? "−2" : day.status === "double" ? "x2" : day.date.slice(8)}
+          {day.status === "miss" ? "·" : day.date.slice(8)}
         </span>
       ))}
     </div>

@@ -20,7 +20,6 @@ const TITLES: Record<string, string> = {
   "/leaderboard": "Рейтинг — Stage 2",
   "/profile": "Профиль — Stage 2",
   "/book": "Книга — Stage 2",
-  "/manage": "Мои привычки — Stage 2",
 };
 
 function NotFoundComponent() {

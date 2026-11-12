@@ -82,61 +82,44 @@ describe("race tiers", () => {
   });
 });
 
-describe("monthly race with penalty days", () => {
+describe("monthly race scored by points", () => {
   const daily: TaskDef[] = [
-    { key: "reading", title: "Книга", description: "", emoji: "📚", kind: "daily", target: 1, points: 10 },
-    { key: "sport", title: "Спорт", description: "", emoji: "💪", kind: "daily", target: 1, points: 10 },
+    { key: "book", title: "Книга", description: "", emoji: "📚", kind: "daily", target: 1, points: 1 },
+    { key: "sport", title: "Спорт", description: "", emoji: "💪", kind: "daily", target: 1, points: 1 },
   ];
-  const mark = (key: string, date: string, times = 1): Completion => ({ user_id: "a", task_key: key, completed_on: date, times });
-  const both = (date: string, times = 1) => [mark("reading", date, times), mark("sport", date, times)];
+  const mark = (key: string, date: string): Completion => ({ user_id: "a", task_key: key, completed_on: date });
+  const both = (date: string) => [mark("book", date), mark("sport", date)];
 
   it("uses November 2026 as a 30-day track", () => {
     expect(monthWindow("2026-11-12")).toEqual({ start: "2026-11-01", end: "2026-11-30", days: 30 });
   });
 
-  it("advances one day per completed day and reaches the finish only on the last day", () => {
+  it("puts a perfect month on the finish and a partial month in proportion to points", () => {
     const list = Array.from({ length: 30 }, (_, index) => both(`2026-11-${String(index + 1).padStart(2, "0")}`)).flat();
     const race = monthRace(list, daily, "2026-11-01", "2026-11-30", "2026-12-01");
-    expect(race.positionDays).toBe(30);
+    expect(race.positionDays).toBe(60);
     expect(race.positionPct).toBe(100);
     expect(race.debt).toBe(0);
     const mid = monthRace(list, daily, "2026-11-01", "2026-11-30", "2026-11-12");
-    expect(mid.positionDays).toBe(12);
+    expect(mid.positionDays).toBe(24);
+    expect(mid.positionPct).toBe(40);
     expect(mid.daysLeft).toBe(18);
   });
 
-  it("rolls back two days at day end and lets two x2 days repay the debt", () => {
-    const open = monthRace([], daily, "2026-11-01", "2026-11-30", "2026-11-01");
-    expect(open.days[0]?.status).toBe("pending");
-    expect(open.debt).toBe(0);
-    const missed = monthRace([], daily, "2026-11-01", "2026-11-30", "2026-11-02");
-    expect(missed.positionDays).toBe(0);
-    expect(missed.debt).toBe(2);
-    const list = [...both("2026-11-01"), ...both("2026-11-03", 2)];
-    const recovering = monthRace(list, daily, "2026-11-01", "2026-11-30", "2026-11-03");
-    expect(recovering.days.map((day) => day.status).slice(0, 3)).toEqual(["done", "miss", "double"]);
-    expect(recovering.positionDays).toBe(2);
-    expect(recovering.debt).toBe(1);
-    const cleared = monthRace([...list, ...both("2026-11-04", 2)], daily, "2026-11-01", "2026-11-30", "2026-11-04");
-    expect(cleared.debt).toBe(0);
-    expect(cleared.positionDays).toBe(4);
-  });
-
-  it("does not move another participant when habits differ", () => {
-    const onlyBook: TaskDef[] = [daily[0]!];
-    const list = [mark("reading", "2026-11-01")];
-    const reader = monthRace(list, onlyBook, "2026-11-01", "2026-11-30", "2026-11-02");
-    const bothHabits = monthRace(list, daily, "2026-11-01", "2026-11-30", "2026-11-02");
-    expect(reader.days[0]?.status).toBe("done");
-    expect(bothHabits.days[0]?.status).toBe("miss");
+  it("does not roll the car back when a day is missed", () => {
+    const list = both("2026-11-01");
+    const race = monthRace(list, daily, "2026-11-01", "2026-11-30", "2026-11-03");
+    expect(race.positionDays).toBe(2);
+    expect(race.debt).toBe(0);
+    expect(race.days[1]?.status).toBe("miss");
   });
 });
 
 describe("identity statements", () => {
   it("keeps a member's own line for each habit", () => {
-    expect(defaultIdentity({ key: "reading", title: "Книга" })).toBe("Я — человек, который читает каждый день");
-    expect(saveIdentity("u", "reading", "Книга", "Я — человек, который читает утром")).toBe("Я — человек, который читает утром");
-    expect(loadIdentity("u", "reading", "Книга")).toBe("Я — человек, который читает утром");
+    expect(defaultIdentity({ key: "book", title: "Книга" })).toBe("Я — человек, который читает каждый день");
+    expect(saveIdentity("u", "book", "Книга", "Я — человек, который читает утром")).toBe("Я — человек, который читает утром");
+    expect(loadIdentity("u", "book", "Книга")).toBe("Я — человек, который читает утром");
     expect(loadIdentity("other", "sport", "Спорт")).toBe("Я — человек, который тренируется каждый день");
   });
 });

@@ -15,8 +15,12 @@ export interface TaskDef {
 }
 
 export const DAILY_TASKS: TaskDef[] = [
-  { key: "reading", title: "Книга", description: "10 страниц или 30 минут аудиокниги", emoji: "📚", kind: "daily", target: 1, points: 10, sortOrder: 10 },
-  { key: "sport", title: "Спорт", description: "Тренировка в зале или 10 000 шагов", emoji: "💪", kind: "daily", target: 1, points: 10, sortOrder: 20 },
+  { key: "book", title: "Книга", description: "10 страниц или 30 минут аудиокниги", emoji: "📚", kind: "daily", target: 1, points: 1, sortOrder: 10 },
+  { key: "sport", title: "Спорт", description: "Тренировка в зале или 10 000 шагов", emoji: "💪", kind: "daily", target: 1, points: 1, sortOrder: 20 },
+  { key: "language", title: "Иностранный язык", description: "Занятие", emoji: "🗣️", kind: "daily", target: 1, points: 1, sortOrder: 30 },
+  { key: "vitamin_c", title: "Витамин C", description: "Принять", emoji: "🍊", kind: "daily", target: 1, points: 1, sortOrder: 40 },
+  { key: "vitamin_e", title: "Витамин E", description: "Принять", emoji: "💊", kind: "daily", target: 1, points: 1, sortOrder: 50 },
+  { key: "kk", title: "КК", description: "Отметить", emoji: "✨", kind: "daily", target: 1, points: 1, sortOrder: 60 },
 ];
 
 export const WEEKLY_TASKS: TaskDef[] = [];
@@ -138,8 +142,7 @@ export function computePoints(
   const { map } = catalog(tasks);
   const sub = list.filter((c) => inRange(c, from, to));
   let pts = 0;
-  for (const c of sub) pts += (map.get(c.task_key)?.points ?? 0) * markTimes(c);
-  pts += perfectDays(sub, tasks).length * PERFECT_DAY_BONUS;
+  for (const c of sub) if (map.has(c.task_key)) pts += 1;
   return pts;
 }
 
@@ -214,7 +217,7 @@ export function computeBadges(list: Completion[], tasks: readonly TaskDef[] = AL
     { key: "perfect", emoji: "🌟", title: "Идеальный день", description: dailyCount > 0 ? `Все ${dailyCount} ежедневных заданий за день` : "Все ежедневные задания за день", earned: perfectDays(scoped, tasks).length >= 1 },
     { key: "week_fire", emoji: "🔥", title: "Неделя огня", description: "Серия 7 дней", earned: best >= 7 },
     { key: "month", emoji: "🏔️", title: "Месяц стойкости", description: "Серия 30 дней", earned: best >= 30 },
-    { key: "reader", emoji: "📚", title: "Книжный червь", description: "Книга 30 дней", earned: count("reading") >= 30 },
+    { key: "reader", emoji: "📚", title: "Книжный червь", description: "Книга 30 дней", earned: count("book") >= 30 },
     { key: "athlete", emoji: "💪", title: "Спортсмен", description: "Спорт 30 дней", earned: count("sport") >= 30 },
     { key: "hundred", emoji: "💯", title: "Сотня", description: "100 выполненных заданий", earned: scoped.length >= 100 },
   ];
