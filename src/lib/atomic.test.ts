@@ -7,6 +7,8 @@ import {
   lawForDate,
   marksWord,
   missedYesterday,
+  monthRace,
+  monthWindow,
   periodScore,
   upgradeHint,
   upgradePhrase,
@@ -77,6 +79,56 @@ describe("race tiers", () => {
     expect(marksWord(1)).toBe("отметка");
     expect(marksWord(5)).toBe("отметок");
     expect(marksWord(21)).toBe("отметка");
+  });
+});
+
+describe("monthly race with penalty days", () => {
+  const daily: TaskDef[] = [
+    { key: "reading", title: "Книга", description: "", emoji: "📚", kind: "daily", target: 1, points: 10 },
+    { key: "sport", title: "Спорт", description: "", emoji: "💪", kind: "daily", target: 1, points: 10 },
+  ];
+  const mark = (key: string, date: string, times = 1): Completion => ({ user_id: "a", task_key: key, completed_on: date, times });
+  const both = (date: string, times = 1) => [mark("reading", date, times), mark("sport", date, times)];
+
+  it("uses November 2026 as a 30-day track", () => {
+    expect(monthWindow("2026-11-12")).toEqual({ start: "2026-11-01", end: "2026-11-30", days: 30 });
+  });
+
+  it("advances one day per completed day and reaches the finish only on the last day", () => {
+    const list = Array.from({ length: 30 }, (_, index) => both(`2026-11-${String(index + 1).padStart(2, "0")}`)).flat();
+    const race = monthRace(list, daily, "2026-11-01", "2026-11-30", "2026-12-01");
+    expect(race.positionDays).toBe(30);
+    expect(race.positionPct).toBe(100);
+    expect(race.debt).toBe(0);
+    const mid = monthRace(list, daily, "2026-11-01", "2026-11-30", "2026-11-12");
+    expect(mid.positionDays).toBe(12);
+    expect(mid.daysLeft).toBe(18);
+  });
+
+  it("rolls back two days at day end and lets two x2 days repay the debt", () => {
+    const open = monthRace([], daily, "2026-11-01", "2026-11-30", "2026-11-01");
+    expect(open.days[0]?.status).toBe("pending");
+    expect(open.debt).toBe(0);
+    const missed = monthRace([], daily, "2026-11-01", "2026-11-30", "2026-11-02");
+    expect(missed.positionDays).toBe(0);
+    expect(missed.debt).toBe(2);
+    const list = [...both("2026-11-01"), ...both("2026-11-03", 2)];
+    const recovering = monthRace(list, daily, "2026-11-01", "2026-11-30", "2026-11-03");
+    expect(recovering.days.map((day) => day.status).slice(0, 3)).toEqual(["done", "miss", "double"]);
+    expect(recovering.positionDays).toBe(2);
+    expect(recovering.debt).toBe(1);
+    const cleared = monthRace([...list, ...both("2026-11-04", 2)], daily, "2026-11-01", "2026-11-30", "2026-11-04");
+    expect(cleared.debt).toBe(0);
+    expect(cleared.positionDays).toBe(4);
+  });
+
+  it("does not move another participant when habits differ", () => {
+    const onlyBook: TaskDef[] = [daily[0]!];
+    const list = [mark("reading", "2026-11-01")];
+    const reader = monthRace(list, onlyBook, "2026-11-01", "2026-11-30", "2026-11-02");
+    const bothHabits = monthRace(list, daily, "2026-11-01", "2026-11-30", "2026-11-02");
+    expect(reader.days[0]?.status).toBe("done");
+    expect(bothHabits.days[0]?.status).toBe("miss");
   });
 });
 

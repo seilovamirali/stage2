@@ -96,6 +96,7 @@ export type Database = {
           created_at: string
           id: string
           task_key: string
+          times: number
           user_id: string
         }
         Insert: {
@@ -103,6 +104,7 @@ export type Database = {
           created_at?: string
           id?: string
           task_key: string
+          times?: number
           user_id: string
         }
         Update: {
@@ -110,7 +112,50 @@ export type Database = {
           created_at?: string
           id?: string
           task_key?: string
+          times?: number
           user_id?: string
+        }
+        Relationships: []
+      }
+      club_user_habits: {
+        Row: {
+          archived: boolean
+          created_at: string
+          description: string
+          emoji: string
+          key: string
+          kind: string
+          points: number
+          sort_order: number
+          title: string
+          user_id: string
+          weekly_target: number | null
+        }
+        Insert: {
+          archived?: boolean
+          created_at?: string
+          description?: string
+          emoji: string
+          key: string
+          kind: string
+          points?: number
+          sort_order?: number
+          title: string
+          user_id: string
+          weekly_target?: number | null
+        }
+        Update: {
+          archived?: boolean
+          created_at?: string
+          description?: string
+          emoji?: string
+          key?: string
+          kind?: string
+          points?: number
+          sort_order?: number
+          title?: string
+          user_id?: string
+          weekly_target?: number | null
         }
         Relationships: []
       }

@@ -7,15 +7,15 @@ import { Confetti } from "@/components/Confetti";
 import { BookTeaser } from "@/components/BookTeaser";
 import { ChainGrid, CheckOrb, CompoundChart, FourLawsCard, HabitDots, IdentityField } from "@/components/Atomic";
 import { MyRaceCard } from "@/components/Race";
-import { meQuery, useGroup, useHabits, useToday, useToggleTask } from "@/hooks/use-habits";
+import { meQuery, useGroup, useHabits, useToday, useToggleTask, useUserHabits, type MarkAction } from "@/hooks/use-habits";
 import { useBookProgress } from "@/hooks/use-book";
 import {
-  ALL_TASKS, activeDaily, activeWeekly, computePoints, currentStreak, formatRuDate,
-  levelInfo, periodRange, weekStart, type TaskDef,
+  activeDaily, activeWeekly, computePoints, currentStreak, formatRuDate,
+  levelInfo, markTimes, weekStart, type TaskDef,
 } from "@/lib/habits";
 import { pagePhrase } from "@/lib/book";
 import {
-  compoundSeries, dayChain, habitChain, lawForDate, missedYesterday, periodScore, upgradePhrase,
+  compoundSeries, dayChain, daysLeftPhrase, habitChain, lawForDate, missedYesterday, monthRace, monthTitle, monthWindow, upgradePhrase,
 } from "@/lib/atomic";
 
 export const Route = createFileRoute("/_authenticated/today")({
@@ -27,10 +27,11 @@ function TodayPage() {
   const group = useGroup();
   const { data, isLoading } = group;
   const habitsQ = useHabits();
+  const everyone = useUserHabits();
   const books = useBookProgress();
   const today = useToday();
   const toggle = useToggleTask(me?.id);
-  const tasks = habitsQ.data ?? ALL_TASKS;
+  const tasks = habitsQ.data ?? [];
   const dailyTasks = activeDaily(tasks);
   const weeklyTasks = activeWeekly(tasks);
   const dailyCount = dailyTasks.length;
@@ -38,25 +39,32 @@ function TodayPage() {
   const mine = useMemo(() => (data?.completions ?? []).filter((c) => c.user_id === me?.id), [data, me]);
   const profile = data?.profiles.find((p) => p.id === me?.id);
   const myBook = books.data?.find((row) => row.user_id === me?.id);
-  const todaySet = new Set(mine.filter((c) => c.completed_on === today).map((c) => c.task_key));
+  const timesToday = (key: string) => {
+    const row = mine.find((item) => item.task_key === key && item.completed_on === today);
+    return row ? markTimes(row) : 0;
+  };
+  const todaySet = new Set(mine.filter((c) => c.completed_on === today && markTimes(c) >= 1).map((c) => c.task_key));
   const doneDaily = dailyTasks.filter((t) => todaySet.has(t.key)).length;
   const pct = dailyCount === 0 ? 0 : Math.round((doneDaily / dailyCount) * 100);
   const points = computePoints(mine, "0000-01-01", "9999-12-31", tasks);
   const lvl = levelInfo(points);
   const streak = currentStreak(mine, today, tasks);
   const ws = weekStart(today);
-  const [weekFrom, weekTo] = periodRange("week", today);
-  const weekScore = periodScore(mine, weekFrom, weekTo, tasks);
-  const weekPoints = computePoints(mine, weekFrom, weekTo, tasks);
+  const month = monthWindow(today);
+  const race = useMemo(() => monthRace(mine, tasks, month.start, month.end, today, profile?.created_at), [mine, month.end, month.start, profile?.created_at, tasks, today]);
+  const monthPoints = computePoints(mine, month.start, today, tasks);
   const standings = useMemo(() => {
     const profiles = data?.profiles ?? [];
     return profiles
       .map((person) => {
         const list = (data?.completions ?? []).filter((row) => row.user_id === person.id);
-        return { id: person.id, pct: periodScore(list, weekFrom, weekTo, tasks).pct, points: computePoints(list, weekFrom, weekTo, tasks) };
+        const own = (everyone.data ?? []).filter((habit) => habit.userId === person.id);
+        const plan = own.length ? own : [];
+        const result = monthRace(list, plan, month.start, month.end, today, person.created_at);
+        return { id: person.id, position: result.positionDays, pace: result.pace.pct, points: computePoints(list, month.start, today, plan) };
       })
-      .sort((a, b) => b.pct - a.pct || b.points - a.points);
-  }, [data, tasks, weekFrom, weekTo]);
+      .sort((a, b) => b.position - a.position || b.pace - a.pace || b.points - a.points);
+  }, [data, everyone.data, month.end, month.start, today]);
   const place = Math.max(1, standings.findIndex((row) => row.id === me?.id) + 1);
   const leader = standings[0]?.id === me?.id && standings.length > 0;
   const showMiss = missedYesterday(mine, today, tasks, profile?.created_at) && doneDaily < dailyCount;
@@ -76,12 +84,12 @@ function TodayPage() {
     }
   }, [dailyCount, doneDaily, isLoading]);
 
-  const onToggle = (task: TaskDef, done: boolean) => {
-    if (!done) {
+  const onToggle = (task: TaskDef, action: MarkAction) => {
+    if (action === "mark" || action === "double") {
       setBurstKey(task.key);
       window.setTimeout(() => setBurstKey((current) => current === task.key ? null : current), 700);
     }
-    toggle.mutate({ key: task.key, done });
+    toggle.mutate({ key: task.key, action });
   };
 
   return (
@@ -119,13 +127,24 @@ function TodayPage() {
         )}
 
         <MyRaceCard
-          pct={weekScore.pct}
-          points={weekPoints}
+          month={monthTitle(month.start)}
+          daysLeftText={daysLeftPhrase(race.daysLeft, false)}
+          pace={race.pace.pct}
+          position={race.positionPct}
+          positionDays={race.positionDays}
+          daysInMonth={race.daysInMonth}
+          debt={race.debt}
+          doubled={race.doubledToday}
+          planned={race.plannedToday}
+          points={monthPoints}
           place={data ? place : 1}
           total={Math.max(1, standings.length)}
-          phrase={upgradePhrase(weekScore.done, weekScore.denom)}
+          phrase={upgradePhrase(race.pace.done, race.pace.denom)}
           leader={leader}
         />
+        <Button asChild variant="outline" className="w-full">
+          <Link to="/manage">Настроить мои привычки</Link>
+        </Button>
 
         {showMiss && (
           <section className="border border-gold bg-gold-soft px-4 py-3">
@@ -148,18 +167,20 @@ function TodayPage() {
         <section>
           <h2 className="font-display mb-3 text-xl font-bold">Сегодня</h2>
           <div className="space-y-3">
+            {dailyTasks.length === 0 && <p className="text-sm text-muted-foreground">Нет ежедневных привычек. Настройте свой список — у других участников он не изменится.</p>}
             {dailyTasks.map((task, index) => (
               <HabitCard
                 key={task.key}
                 task={task}
-                done={todaySet.has(task.key)}
+                times={timesToday(task.key)}
                 burst={burstKey === task.key}
                 index={index}
                 userId={me?.id}
                 dots={habitChain(mine, task.key, today)}
                 pageLabel={task.key === "reading" ? (myBook ? pagePhrase(myBook.current_page) : "Укажите свою страницу") : undefined}
-                disabled={isLoading || !me}
-                onClick={() => onToggle(task, todaySet.has(task.key))}
+                disabled={isLoading || !me || toggle.isPending}
+                highlightDouble={race.debt > 0}
+                onAction={(action) => onToggle(task, action)}
               />
             ))}
           </div>
@@ -170,13 +191,13 @@ function TodayPage() {
             <h2 className="font-display mb-3 text-xl font-bold">На этой неделе</h2>
             <div className="space-y-3">
               {weeklyTasks.map((task) => {
-                const weekCount = mine.filter((c) => c.task_key === task.key && c.completed_on >= ws && c.completed_on <= today).length;
-                const doneToday = todaySet.has(task.key);
+                const weekCount = mine.filter((c) => c.task_key === task.key && c.completed_on >= ws && c.completed_on <= today).reduce((sum, row) => sum + markTimes(row), 0);
+                const times = timesToday(task.key);
                 const full = weekCount >= task.target;
                 return (
                   <div key={task.key} className={`border p-4 ${full ? "border-gold bg-gold-soft" : "border-border bg-card"}`}>
                     <div className="flex items-center gap-3">
-                      <CheckOrb done={doneToday || full} burst={burstKey === task.key} />
+                      <CheckOrb done={times > 0 || full} burst={burstKey === task.key} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-baseline justify-between gap-2">
                           <h3 className="font-semibold">{task.title}</h3>
@@ -187,16 +208,7 @@ function TodayPage() {
                       </div>
                     </div>
                     <Bar value={(weekCount / task.target) * 100} className="mt-3" />
-                    <div className="mt-3">
-                      {doneToday ? (
-                        <Button variant="undo" size="xl" className="w-full" onClick={() => onToggle(task, true)}>Отменить</Button>
-                      ) : (
-                        <Button variant={full ? "undo" : "hero"} size="xl" className="w-full" disabled={full || isLoading}
-                          onClick={() => onToggle(task, false)}>
-                          {full ? "Цель недели достигнута" : "Выполнено"}
-                        </Button>
-                      )}
-                    </div>
+                    <MarkButtons times={times} full={full} disabled={isLoading || !me || toggle.isPending} highlightDouble={race.debt > 0} onAction={(action) => onToggle(task, action)} />
                   </div>
                 );
               })}
@@ -218,24 +230,25 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function HabitCard({ task, done, burst, index, userId, dots, pageLabel, disabled, onClick }: {
+function HabitCard({ task, times, burst, index, userId, dots, pageLabel, disabled, highlightDouble, onAction }: {
   task: TaskDef;
-  done: boolean;
+  times: number;
   burst: boolean;
   index: number;
   userId: string | undefined;
   dots: { date: string; on: boolean }[];
   pageLabel: string | undefined;
   disabled: boolean;
-  onClick: () => void;
+  highlightDouble: boolean;
+  onAction: (action: MarkAction) => void;
 }) {
   return (
     <article
-      className={`animate-fade-up border p-4 ${done ? "border-gold bg-gold-soft/70" : "border-border bg-card"}`}
+      className={`animate-fade-up border p-4 ${times > 0 ? "border-gold bg-gold-soft/70" : "border-border bg-card"}`}
       style={{ animationDelay: `${index * 40}ms` }}
     >
       <div className="flex items-start gap-3">
-        <CheckOrb done={done} burst={burst} />
+        <CheckOrb done={times > 0} burst={burst} />
         <div className="min-w-0 flex-1">
           <h3 className="font-semibold">{task.emoji} {task.title}</h3>
           <IdentityField userId={userId} habitKey={task.key} habitTitle={task.title} />
@@ -250,10 +263,33 @@ function HabitCard({ task, done, burst, index, userId, dots, pageLabel, disabled
             <Link to="/book">Моя книга</Link>
           </Button>
         )}
-        <Button variant={done ? "undo" : "hero"} size="xl" className="px-2" onClick={onClick} disabled={disabled}>
-          {done ? "Отменить" : "Выполнено"}
-        </Button>
+        <MarkButtons times={times} full={false} disabled={disabled} highlightDouble={highlightDouble} onAction={onAction} />
       </div>
     </article>
+  );
+}
+
+function MarkButtons({ times, full, disabled, highlightDouble, onAction }: {
+  times: number;
+  full: boolean;
+  disabled: boolean;
+  highlightDouble: boolean;
+  onAction: (action: MarkAction) => void;
+}) {
+  if (times >= 2) {
+    return <Button variant="undo" size="xl" className="w-full" disabled={disabled} onClick={() => onAction("undo-double")}>Убрать x2</Button>;
+  }
+  if (times === 1) {
+    return (
+      <div className="grid grid-cols-2 gap-2">
+        <Button variant="undo" size="xl" disabled={disabled} onClick={() => onAction("clear")}>Отменить</Button>
+        <Button variant={highlightDouble ? "gold" : "hero"} size="xl" disabled={disabled} onClick={() => onAction("double")}>Сделать x2</Button>
+      </div>
+    );
+  }
+  return (
+    <Button variant={full ? "undo" : "hero"} size="xl" className="w-full" disabled={disabled || full} onClick={() => onAction("mark")}>
+      {full ? "Цель недели достигнута" : "Выполнено"}
+    </Button>
   );
 }

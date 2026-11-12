@@ -1,170 +1,147 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { meQuery, useGroup, useHabits, useToday } from "@/hooks/use-habits";
+import { meQuery, useGroup, useToday, useUserHabits } from "@/hooks/use-habits";
 import { Bar } from "@/components/ProgressRing";
 import { Button } from "@/components/ui/button";
 import { CompoundChart } from "@/components/Atomic";
-import { RaceTrack, type Racer } from "@/components/Race";
-import { compoundSeries } from "@/lib/atomic";
-import {
-  ALL_TASKS, activeDaily, completionPct, computePoints, currentStreak, diffDays, formatRuDate, periodRange, weekStart, type Period,
-} from "@/lib/habits";
+import { RaceHistory, RaceRules, RaceTrack, type Racer } from "@/components/Race";
+import { compoundSeries, daysLeftPhrase, monthRace, monthTitle, monthWindow, shiftMonth } from "@/lib/atomic";
+import { activeDaily, computePoints, currentStreak, markTimes } from "@/lib/habits";
 
 export const Route = createFileRoute("/_authenticated/leaderboard")({
   component: LeaderboardPage,
 });
 
-const RACE_PERIODS: { key: Period; label: string }[] = [
-  { key: "today", label: "Сегодня" },
-  { key: "week", label: "Неделя" },
-];
-const MORE_PERIODS: { key: Period; label: string }[] = [
-  { key: "month", label: "Месяц" },
-  { key: "all", label: "Всё время" },
-];
-const MEDALS = ["🥇", "🥈", "🥉"];
-
 function LeaderboardPage() {
   const { data: me } = useQuery(meQuery);
   const group = useGroup();
   const { data, isLoading } = group;
-  const habitsQ = useHabits();
+  const habitsQ = useUserHabits();
   const today = useToday();
-  const tasks = habitsQ.data ?? ALL_TASKS;
-  const dailyTasks = activeDaily(tasks);
-  const [period, setPeriod] = useState<Period>("week");
+  const current = monthWindow(today);
+  const [monthStartDate, setMonthStartDate] = useState(current.start);
+  const month = monthWindow(monthStartDate);
+  const past = today > month.end;
+  const asOf = past ? month.end : today;
 
   const rows = useMemo(() => {
     if (!data) return [];
-    const dailyKeys = new Set(dailyTasks.map((task) => task.key));
     return data.profiles
-      .map((p) => {
-        const list = data.completions.filter((c) => c.user_id === p.id);
-        const first = list[0]?.completed_on ?? p.created_at.slice(0, 10);
-        const [from, to] = periodRange(period, today, first);
-        const todayDone = new Set(list.filter((c) => c.completed_on === today && dailyKeys.has(c.task_key)).map((c) => c.task_key));
-        const weekFrom = weekStart(today);
-        const weekDone = list.filter((c) => c.completed_on >= weekFrom && c.completed_on <= today && dailyKeys.has(c.task_key)).length;
-        const weekDays = diffDays(today, weekFrom) + 1;
+      .map((person) => {
+        const list = data.completions.filter((row) => row.user_id === person.id);
+        const own = (habitsQ.data ?? []).filter((habit) => habit.userId === person.id);
+        const race = monthRace(list, own, month.start, month.end, past ? month.end : today, person.created_at);
+        const daily = activeDaily(own);
+        const todayDone = new Set(list.filter((row) => row.completed_on === today && daily.some((task) => task.key === row.task_key)).map((row) => row.task_key));
         return {
-          ...p,
-          points: computePoints(list, from, to, tasks),
-          pct: completionPct(list, from, to, tasks),
-          weekPct: completionPct(list, weekFrom, today, tasks),
-          weekDone,
-          weekDays,
-          streak: currentStreak(list, today, tasks),
+          ...person,
+          own,
+          daily,
+          race,
+          points: computePoints(list, month.start, asOf, own),
+          streak: currentStreak(list, today, own),
           todayDone,
+          list,
         };
       })
-      .sort((a, b) => b.pct - a.pct || b.points - a.points || a.display_name.localeCompare(b.display_name, "ru"));
-  }, [dailyTasks, data, period, tasks, today]);
+      .sort((a, b) => b.race.positionDays - a.race.positionDays || b.race.pace.pct - a.race.pace.pct || b.points - a.points || a.display_name.localeCompare(b.display_name, "ru"));
+  }, [asOf, data, habitsQ.data, month.end, month.start, past, today]);
+
+  const winner = past ? rows[0] : undefined;
+  const meRow = rows.find((row) => row.id === me?.id);
 
   return (
-    <div className="px-4 pt-6">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gold">Stage 2</p>
-      <h1 className="font-display mt-2 text-3xl font-bold">Трасса</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Место на треке — процент выполнения. Финиш справа.</p>
+    <div className="space-y-6 px-4 pb-8 pt-6">
+      <header>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gold">Stage 2</p>
+        <h1 className="font-display mt-2 text-3xl font-bold">Трасса</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{monthTitle(month.start)}. {daysLeftPhrase(past ? 0 : monthRace([], [], month.start, month.end, today).daysLeft, past)}. Старт {month.start.slice(8)} · финиш {month.end.slice(8)}.</p>
+      </header>
 
-      <div className="mt-5 grid grid-cols-2 gap-2">
-        {RACE_PERIODS.map((p) => (
-          <button key={p.key} onClick={() => setPeriod(p.key)}
-            className={`h-11 rounded-full text-sm font-semibold transition-all ${period === p.key ? "bg-foreground text-background" : "border border-border text-muted-foreground"}`}>
-            {p.label}
-          </button>
-        ))}
-      </div>
-      <div className="mt-2 flex gap-2">
-        {MORE_PERIODS.map((p) => (
-          <button key={p.key} onClick={() => setPeriod(p.key)}
-            className={`h-9 flex-1 text-xs font-semibold ${period === p.key ? "text-foreground underline decoration-gold decoration-2 underline-offset-4" : "text-muted-foreground"}`}>
-            {p.label}
-          </button>
-        ))}
+      <div className="flex items-center justify-between gap-2">
+        <Button variant="outline" onClick={() => setMonthStartDate(shiftMonth(month.start, -1))}>Прошлый</Button>
+        <p className="text-sm font-semibold">{monthTitle(month.start)}</p>
+        <Button variant="outline" disabled={!past} onClick={() => setMonthStartDate(shiftMonth(month.start, 1))}>Дальше</Button>
       </div>
 
-      {group.isError ? (
-        <Button variant="outline" className="mt-6 w-full" onClick={() => group.refetch()}>Не удалось загрузить. Повторить</Button>
-      ) : isLoading ? (
+      {past && winner && (
+        <p className="border border-gold bg-gold-soft px-3 py-2 text-sm font-semibold">Победитель: {winner.display_name} · {winner.race.positionDays} дн.</p>
+      )}
+
+      {group.isError || habitsQ.isError ? (
+        <Button variant="outline" className="w-full" onClick={() => { void group.refetch(); void habitsQ.refetch(); }}>Не удалось загрузить. Повторить</Button>
+      ) : isLoading || habitsQ.isLoading ? (
         <p className="py-10 text-center text-muted-foreground">Загрузка…</p>
       ) : (
         <>
-          <div className="mt-6">
-            <RaceTrack
-              motionKey={period}
-              racers={rows.map((racer): Racer => ({
-                id: racer.id,
-                name: racer.display_name,
-                emoji: racer.avatar_emoji,
-                pct: racer.pct,
-                points: racer.points,
-                isMe: racer.id === me?.id,
-              }))}
-            />
-          </div>
-
-          <h2 className="font-display mb-3 mt-8 text-xl font-bold">1% лучше</h2>
-          <ul className="space-y-2">
-            {rows.map((r, i) => {
-              const isMe = r.id === me?.id;
-              return (
-                <li key={r.id} className={`flex items-center gap-3 rounded-2xl border p-3 shadow-card ${isMe ? "border-gold bg-gold-soft" : "bg-card"}`}>
-                  <span className="w-7 text-center text-lg font-bold text-muted-foreground">{MEDALS[i] ?? i + 1}</span>
-                  <span className="text-2xl">{r.avatar_emoji}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold">
-                      {r.display_name} {isMe && <span className="ml-1 rounded-full bg-primary px-2 py-0.5 text-[10px] text-primary-foreground">Вы</span>}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{r.pct}% · серия {r.streak}</p>
-                    <Bar value={r.pct} className="mt-1.5" />
-                    <div className="mt-2">
-                      <CompoundChart compact points={compoundSeries((data?.completions ?? []).filter((row) => row.user_id === r.id), today, tasks)} />
+          <RaceTrack
+            motionKey={month.start}
+            racers={rows.map((racer): Racer => ({
+              id: racer.id,
+              name: racer.display_name,
+              emoji: racer.avatar_emoji,
+              pct: racer.race.pace.pct,
+              position: racer.race.positionPct,
+              points: racer.points,
+              debt: racer.race.debt,
+              isMe: racer.id === me?.id,
+            }))}
+          />
+          {meRow && (
+            <section>
+              <h2 className="font-display mb-3 text-xl font-bold">История месяца</h2>
+              <RaceHistory days={meRow.race.days} />
+              <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
+                {meRow.race.days.filter((day) => day.status === "miss" || day.status === "double").map((day) => (
+                  <li key={day.date}>{day.date.slice(8)}.{month.start.slice(5, 7)} · {day.status === "miss" ? "штраф −2 дня" : day.delta === 2 ? "x2, возврат +1" : "x2"}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+          <RaceRules />
+          <section>
+            <h2 className="font-display mb-3 text-xl font-bold">1% лучше</h2>
+            <ul className="space-y-2">
+              {rows.map((racer, index) => (
+                <li key={racer.id} className={`rounded-2xl border p-3 ${racer.id === me?.id ? "border-gold bg-gold-soft" : "bg-card"}`}>
+                  <div className="flex items-center gap-3">
+                    <span className="w-6 text-center font-bold text-muted-foreground">{index + 1}</span>
+                    <span className="text-2xl">{racer.avatar_emoji}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold">{racer.display_name}</p>
+                      <p className="text-xs text-muted-foreground">темп {racer.race.pace.pct}% · {racer.race.positionDays}/{racer.race.daysInMonth} дн.{racer.race.debt > 0 ? ` · штраф −${racer.race.debt}` : ""}</p>
                     </div>
+                    <span className="font-display text-lg font-bold">{racer.points}</span>
                   </div>
-                  <span className="font-display text-lg font-bold text-primary">{r.points}</span>
+                  <div className="mt-2">
+                    <CompoundChart compact points={compoundSeries(racer.list, today, racer.own)} />
+                  </div>
                 </li>
-              );
-            })}
-          </ul>
-
-          <h2 className="font-display mb-1 mt-8 text-xl font-bold">Эта неделя</h2>
-          <p className="mb-3 text-sm text-muted-foreground">С {formatRuDate(weekStart(today))} · ежедневные отметки и процент недели</p>
-          <ul className="space-y-2">
-            {rows.map((r) => (
-              <li key={`week-${r.id}`} className="rounded-2xl border bg-card p-3 shadow-card">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">{r.avatar_emoji}</span>
-                  <span className="flex-1 truncate font-medium">{r.display_name}</span>
-                  <span className="text-sm font-bold">{r.weekPct}%</span>
-                </div>
-                <Bar value={r.weekPct} className="mt-2" />
-                <p className="mt-1 text-xs text-muted-foreground">{r.weekDone} ежедневных отметок за {r.weekDays} дн.</p>
-              </li>
-            ))}
-          </ul>
-
-          <h2 className="font-display mb-3 mt-8 text-xl font-bold">Сегодня в группе</h2>
-          <ul className="space-y-2 pb-4">
-            {rows.map((r) => (
-              <li key={r.id} className="rounded-2xl border bg-card p-3 shadow-card">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">{r.avatar_emoji}</span>
-                  <span className="flex-1 truncate font-medium">{r.display_name}</span>
-                  <span className="text-sm font-bold">{r.todayDone.size}/{dailyTasks.length}</span>
-                </div>
-                <Bar value={dailyTasks.length === 0 ? 0 : (r.todayDone.size / dailyTasks.length) * 100} className="mt-2" />
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {dailyTasks.map((t) => (
-                    <span key={t.key} title={t.title}
-                      className={`flex h-7 w-7 items-center justify-center rounded-lg text-sm ${r.todayDone.has(t.key) ? "bg-done" : "bg-muted opacity-40 grayscale"}`}>
-                      {t.emoji}
-                    </span>
-                  ))}
-                </div>
-              </li>
-            ))}
-          </ul>
+              ))}
+            </ul>
+          </section>
+          <section>
+            <h2 className="font-display mb-3 text-xl font-bold">Сегодня в группе</h2>
+            <ul className="space-y-2">
+              {rows.map((racer) => (
+                <li key={`today-${racer.id}`} className="rounded-2xl border bg-card p-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{racer.avatar_emoji}</span>
+                    <span className="flex-1 truncate font-medium">{racer.display_name}</span>
+                    <span className="text-sm font-bold">{racer.todayDone.size}/{racer.daily.length}</span>
+                  </div>
+                  <Bar value={racer.daily.length === 0 ? 0 : (racer.todayDone.size / racer.daily.length) * 100} className="mt-2" />
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {racer.daily.map((task) => (
+                      <span key={task.key} title={task.title} className={`flex h-7 w-7 items-center justify-center rounded-lg text-sm ${racer.todayDone.has(task.key) ? "bg-done" : "bg-muted opacity-40 grayscale"}`}>{task.emoji}</span>
+                    ))}
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">Серия {racer.streak} · отметки {racer.list.reduce((sum, row) => sum + markTimes(row), 0)}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
         </>
       )}
     </div>

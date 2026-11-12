@@ -3,6 +3,8 @@ import {
   activeWeekly,
   addDays,
   diffDays,
+  markTimes,
+  monthStart,
   weeksTouched,
   type Completion,
   type TaskDef,
@@ -149,7 +151,12 @@ export function periodScore(
   const weekly = activeWeekly(tasks);
   const dailyKeys = new Set(daily.map((task) => task.key));
   const weeklyKeys = new Set(weekly.map((task) => task.key));
-  const done = list.filter((row) => row.completed_on >= from && row.completed_on <= to && (dailyKeys.has(row.task_key) || weeklyKeys.has(row.task_key))).length;
+  const done = list.reduce((sum, row) => {
+    if (row.completed_on < from || row.completed_on > to) return sum;
+    if (dailyKeys.has(row.task_key)) return sum + 1;
+    if (weeklyKeys.has(row.task_key)) return sum + markTimes(row);
+    return sum;
+  }, 0);
   const denom = daily.length * days + weekly.reduce((sum, task) => sum + task.target, 0) * weeksTouched(from, to);
   const pct = denom <= 0 ? 0 : Math.min(100, Math.round((done / denom) * 100));
   return { done, denom, pct };
@@ -207,6 +214,154 @@ export function upgradePhrase(done: number, denom: number): string {
   const hint = upgradeHint(done, denom);
   if (!hint) return "Вы на GT Turbo — финишный флаг ваш.";
   return `Ещё ${hint.marks} ${marksWord(hint.marks)} до ${hint.genitive}`;
+}
+
+export interface MonthWindow {
+  start: string;
+  end: string;
+  days: number;
+}
+
+export function monthWindow(today: string): MonthWindow {
+  const start = monthStart(today);
+  const year = Number(start.slice(0, 4));
+  const month = Number(start.slice(5, 7));
+  const end = new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
+  return { start, end, days: diffDays(end, start) + 1 };
+}
+
+export function shiftMonth(monthStartDate: string, delta: number): string {
+  const year = Number(monthStartDate.slice(0, 4));
+  const month = Number(monthStartDate.slice(5, 7));
+  return new Date(Date.UTC(year, month - 1 + delta, 1)).toISOString().slice(0, 10);
+}
+
+export function monthTitle(monthStartDate: string): string {
+  const raw = new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(monthStartDate + "T00:00:00Z"));
+  const cleaned = raw.replace(/\s*г\.\s*$/, "");
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+}
+
+export function daysLeftPhrase(daysLeft: number, past: boolean): string {
+  if (past) return "Итог месяца";
+  if (daysLeft <= 0) return "Финиш сегодня";
+  const n10 = daysLeft % 10;
+  const n100 = daysLeft % 100;
+  const word = n10 === 1 && n100 !== 11 ? "день" : n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14) ? "дня" : "дней";
+  return `До финиша ${daysLeft} ${word}`;
+}
+
+export type RaceStatus = "before" | "future" | "pending" | "done" | "double" | "miss" | "free";
+
+export interface RaceDay {
+  date: string;
+  status: RaceStatus;
+  position: number;
+  debt: number;
+  delta: number;
+}
+
+export interface MonthRace {
+  days: RaceDay[];
+  positionDays: number;
+  positionPct: number;
+  debt: number;
+  pace: { done: number; denom: number; pct: number };
+  daysInMonth: number;
+  daysLeft: number;
+  past: boolean;
+  doubledToday: number;
+  plannedToday: number;
+}
+
+function timesOn(list: readonly Completion[], key: string, date: string): number {
+  let best = 0;
+  for (const row of list) {
+    if (row.task_key === key && row.completed_on === date) best = Math.max(best, markTimes(row));
+  }
+  return best;
+}
+
+/** Position = days advanced − penalties + recovered. A missed day (after it ends) costs 2 days, never past the start. An x2 day moves +1 and, while a debt remains, recovers one more day. */
+export function monthRace(
+  list: readonly Completion[],
+  tasks: readonly TaskDef[],
+  monthStartDate: string,
+  monthEnd: string,
+  today: string,
+  memberSince?: string,
+): MonthRace {
+  const daysInMonth = diffDays(monthEnd, monthStartDate) + 1;
+  const past = today > monthEnd;
+  const daysLeft = past ? 0 : today < monthStartDate ? daysInMonth : diffDays(monthEnd, today);
+  const daily = activeDaily(tasks);
+  const joined = memberSince?.slice(0, 10);
+  let position = 0;
+  let debt = 0;
+  const days: RaceDay[] = [];
+  let doubledToday = 0;
+  let plannedToday = daily.length;
+  for (let index = 0; index < daysInMonth; index++) {
+    const date = addDays(monthStartDate, index);
+    let status: RaceStatus = "future";
+    let delta = 0;
+    if (joined && date < joined) status = "before";
+    else if (!past && date > today) status = "future";
+    else if (daily.length === 0) {
+      status = "free";
+      position += 1;
+      delta = 1;
+    } else {
+      let done = 0;
+      let doubled = 0;
+      for (const task of daily) {
+        const times = timesOn(list, task.key, date);
+        if (times >= 1) done += 1;
+        if (times >= 2) doubled += 1;
+      }
+      const ended = past || date < today;
+      if (date === today && !past) {
+        doubledToday = doubled;
+        plannedToday = daily.length;
+      }
+      if (doubled === daily.length) {
+        status = "double";
+        position += 1;
+        delta = 1;
+        if (debt > 0) {
+          debt -= 1;
+          position += 1;
+          delta = 2;
+        }
+      } else if (done === daily.length) {
+        status = "done";
+        position += 1;
+        delta = 1;
+      } else if (ended) {
+        status = "miss";
+        debt += 2;
+        const next = position - 2;
+        position = next < 0 ? 0 : next;
+        delta = -2;
+      } else status = "pending";
+    }
+    if (position > daysInMonth) position = daysInMonth;
+    days.push({ date, status, position, debt, delta });
+  }
+  const asOf = past ? monthEnd : today < monthStartDate ? monthStartDate : today;
+  const pace = periodScore(list, monthStartDate, asOf, tasks);
+  return {
+    days,
+    positionDays: position,
+    positionPct: daysInMonth <= 0 ? 0 : Math.round((position / daysInMonth) * 100),
+    debt,
+    pace,
+    daysInMonth,
+    daysLeft,
+    past,
+    doubledToday,
+    plannedToday,
+  };
 }
 
 export function defaultIdentity(task: { key: string; title: string }): string {

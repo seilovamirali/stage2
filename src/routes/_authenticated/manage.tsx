@@ -5,8 +5,9 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { errorText, useHabits } from "@/hooks/use-habits";
+import { errorText, meQuery, useGroup, useHabits } from "@/hooks/use-habits";
 import { activeTasks, newHabitKey, type TaskDef } from "@/lib/habits";
+import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_authenticated/manage")({
   component: ManagePage,
@@ -35,9 +36,12 @@ const emptyDraft = (): Draft => ({
 });
 
 function ManagePage() {
+  const { data: me } = useQuery(meQuery);
   const habitsQ = useHabits();
+  const group = useGroup();
   const qc = useQueryClient();
   const tasks = habitsQ.data ?? [];
+  const [confirm, setConfirm] = useState<{ key: string; title: string; mode: "archive" | "delete" } | null>(null);
   const active = activeTasks(tasks);
   const archived = tasks.filter((task) => task.archived).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -68,11 +72,13 @@ function ManagePage() {
       weekly_target: draft.kind === "weekly" ? target : null,
       points,
     };
+    if (!me?.id) return;
     setBusy(true);
     const result = draft.key
-      ? await supabase.from("club_habits").update(payload).eq("key", draft.key)
-      : await supabase.from("club_habits").insert({
+      ? await supabase.from("club_user_habits").update(payload).eq("user_id", me.id).eq("key", draft.key)
+      : await supabase.from("club_user_habits").insert({
           ...payload,
+          user_id: me.id,
           key: newHabitKey(),
           sort_order: Math.max(0, ...tasks.map((task) => task.sortOrder ?? 0)) + 10,
         });
@@ -83,16 +89,32 @@ function ManagePage() {
     }
     toast.success(draft.key ? "Привычка обновлена" : "Привычка добавлена");
     setDraft(null);
-    await qc.invalidateQueries({ queryKey: ["habits"] });
+    await qc.invalidateQueries({ queryKey: ["user-habits"] });
   };
 
   const patch = async (key: string, values: { archived?: boolean; sort_order?: number }) => {
-    const { error } = await supabase.from("club_habits").update(values).eq("key", key);
+    if (!me?.id) return;
+    const { error } = await supabase.from("club_user_habits").update(values).eq("user_id", me.id).eq("key", key);
     if (error) toast.error(errorText(error) || "Не удалось изменить привычку");
-    await qc.invalidateQueries({ queryKey: ["habits"] });
+    await qc.invalidateQueries({ queryKey: ["user-habits"] });
+  };
+
+  const removeHabit = async (key: string) => {
+    if (!me?.id) return;
+    const hasMarks = (group.data?.completions ?? []).some((row) => row.user_id === me.id && row.task_key === key);
+    if (hasMarks) {
+      await patch(key, { archived: true });
+      toast("Есть отметки — привычка в архиве, история сохранена");
+      return;
+    }
+    const { error } = await supabase.from("club_user_habits").delete().eq("user_id", me.id).eq("key", key);
+    if (error) toast.error(errorText(error) || "Не удалось удалить");
+    else toast.success("Привычка удалена");
+    await qc.invalidateQueries({ queryKey: ["user-habits"] });
   };
 
   const move = async (key: string, direction: -1 | 1) => {
+    if (!me?.id) return;
     const index = active.findIndex((task) => task.key === key);
     const next = index + direction;
     const current = active[index];
@@ -101,18 +123,18 @@ function ManagePage() {
     copy.splice(index, 1);
     copy.splice(next, 0, current);
     setBusy(true);
-    const results = await Promise.all(copy.map((task, order) => supabase.from("club_habits").update({ sort_order: (order + 1) * 10 }).eq("key", task.key)));
+    const results = await Promise.all(copy.map((task, order) => supabase.from("club_user_habits").update({ sort_order: (order + 1) * 10 }).eq("user_id", me.id).eq("key", task.key)));
     setBusy(false);
     const failed = results.find((result) => result.error);
     if (failed?.error) toast.error(errorText(failed.error) || "Не удалось изменить порядок");
-    await qc.invalidateQueries({ queryKey: ["habits"] });
+    await qc.invalidateQueries({ queryKey: ["user-habits"] });
   };
 
   return (
     <div className="space-y-5 px-4 pb-6 pt-6">
       <header>
-        <h1 className="font-display text-3xl font-bold">Привычки</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Общий список Stage 2. Любой участник может добавить, изменить, переставить или убрать в архив ежедневную привычку или привычку несколько раз в неделю. Удалять совсем нельзя: старые отметки остаются.</p>
+        <h1 className="font-display text-3xl font-bold">Мои привычки</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Это только ваш список. Книга и спорт стоят у каждого с начала, а правки, новые привычки и архив не затрагивают остальных.</p>
       </header>
 
       {habitsQ.isError && (
@@ -135,11 +157,21 @@ function ManagePage() {
               <Button variant="outline" size="sm" className="rounded-xl" disabled={busy || index === 0} onClick={() => move(task.key, -1)}>Выше</Button>
               <Button variant="outline" size="sm" className="rounded-xl" disabled={busy || index === active.length - 1} onClick={() => move(task.key, 1)}>Ниже</Button>
               <Button variant="outline" size="sm" className="rounded-xl" onClick={() => setDraft(draftFrom(task))}>Изменить</Button>
-              <Button variant="undo" size="sm" className="rounded-xl" onClick={() => patch(task.key, { archived: true })}>В архив</Button>
+              <Button variant="undo" size="sm" className="rounded-xl" onClick={() => setConfirm({ key: task.key, title: task.title, mode: "archive" })}>В архив</Button>
+              <Button variant="outline" size="sm" className="col-span-2 rounded-xl" onClick={() => setConfirm({ key: task.key, title: task.title, mode: "delete" })}>Удалить</Button>
             </div>
           </article>
         ))}
       </section>
+
+      {confirm && (
+        <section className="space-y-3 border border-gold bg-gold-soft p-4">
+          <h2 className="font-display text-xl font-bold">{confirm.mode === "archive" ? "Убрать в архив?" : "Удалить привычку?"}</h2>
+          <p className="text-sm">{confirm.title}. {confirm.mode === "archive" ? "Привычка скроется только у вас. Прошлые отметки сохранятся." : "Если отметки уже есть, привычка уйдёт в архив, а не сотрётся. У других участников список не изменится."}</p>
+          <Button variant="hero" size="xl" className="w-full" onClick={() => { if (confirm.mode === "archive") void patch(confirm.key, { archived: true }); else void removeHabit(confirm.key); setConfirm(null); }}>Да, продолжить</Button>
+          <Button variant="outline" size="xl" className="w-full" onClick={() => setConfirm(null)}>Отмена</Button>
+        </section>
+      )}
 
       {draft ? (
         <form className="space-y-3 rounded-3xl border bg-card p-4 shadow-card" onSubmit={(event) => { event.preventDefault(); void save(); }}>

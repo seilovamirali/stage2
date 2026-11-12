@@ -67,6 +67,13 @@ export interface Completion {
   user_id: string;
   task_key: string;
   completed_on: string; // YYYY-MM-DD (Almaty)
+  times?: number; // 1 = done, 2 = x2
+}
+
+export function markTimes(row: { times?: number }): number {
+  const n = row.times ?? 1;
+  if (!Number.isFinite(n) || n < 1) return 1;
+  return Math.min(2, Math.trunc(n));
 }
 
 // ---------- Dates (Asia/Almaty) ----------
@@ -131,7 +138,7 @@ export function computePoints(
   const { map } = catalog(tasks);
   const sub = list.filter((c) => inRange(c, from, to));
   let pts = 0;
-  for (const c of sub) pts += map.get(c.task_key)?.points ?? 0;
+  for (const c of sub) pts += (map.get(c.task_key)?.points ?? 0) * markTimes(c);
   pts += perfectDays(sub, tasks).length * PERFECT_DAY_BONUS;
   return pts;
 }
@@ -148,7 +155,7 @@ export function completionPct(list: Completion[], from: string, to: string, task
   const { dailyKeys, weeklyKeys, dailyCount, weeklyTarget } = catalog(tasks);
   const sub = list.filter((c) => inRange(c, from, to));
   const daily = sub.filter((c) => dailyKeys.has(c.task_key)).length;
-  const weekly = sub.filter((c) => weeklyKeys.has(c.task_key)).length;
+  const weekly = sub.filter((c) => weeklyKeys.has(c.task_key)).reduce((sum, row) => sum + markTimes(row), 0);
   const denom = dailyCount * days + weeklyTarget * weeksTouched(from, to);
   if (denom <= 0) return 0;
   return Math.min(100, Math.round(((daily + weekly) / denom) * 100));

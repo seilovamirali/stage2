@@ -10,7 +10,7 @@ import { meQuery, useGroup, useHabits, useToday } from "@/hooks/use-habits";
 import { ChainGrid, CompoundChart, IdentityField } from "@/components/Atomic";
 import { compoundSeries, dayChain } from "@/lib/atomic";
 import {
-  ALL_TASKS, activeTasks, bestStreak, computeBadges, computePoints, currentStreak, levelInfo,
+  activeTasks, bestStreak, computeBadges, computePoints, currentStreak, levelInfo,
 } from "@/lib/habits";
 
 export const Route = createFileRoute("/_authenticated/profile")({
@@ -24,7 +24,7 @@ function ProfilePage() {
   const { data } = useGroup();
   const habitsQ = useHabits();
   const today = useToday();
-  const tasks = habitsQ.data ?? ALL_TASKS;
+  const tasks = habitsQ.data ?? [];
   const qc = useQueryClient();
   const navigate = useNavigate();
   const profile = data?.profiles.find((p) => p.id === me?.id);
@@ -126,7 +126,7 @@ function ProfilePage() {
       </section>
 
       <Button asChild variant="hero" size="xl" className="w-full">
-        <Link to="/manage">Привычки</Link>
+        <Link to="/manage">Мои привычки</Link>
       </Button>
       <Button variant="outline" size="xl" className="mb-4 w-full" onClick={signOut}>Выйти</Button>
     </div>
