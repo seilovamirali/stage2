@@ -5,7 +5,10 @@ import { Button } from "@/components/ui/button";
 import { ProgressRing, Bar } from "@/components/ProgressRing";
 import { Confetti } from "@/components/Confetti";
 import { BookTeaser } from "@/components/BookTeaser";
-import { ChainGrid, CheckOrb, CompoundChart, FourLawsCard, HabitDots, IdentityField } from "@/components/Atomic";
+import { CheckOrb, FourLawsCard, HabitDots, IdentityField } from "@/components/Atomic";
+import { DayCountdown } from "@/components/DayCountdown";
+import { MotivationCard } from "@/components/MotivationCard";
+import { PushOptIn } from "@/components/PushOptIn";
 import { MyRaceCard } from "@/components/Race";
 import { meQuery, useGroup, useHabits, useToday, useToggleTask } from "@/hooks/use-habits";
 import { useBookProgress } from "@/hooks/use-book";
@@ -15,7 +18,7 @@ import {
 } from "@/lib/habits";
 import { pagePhrase } from "@/lib/book";
 import {
-  compoundSeries, dayChain, daysLeftPhrase, habitChain, lawForDate, monthRace, monthTitle, monthWindow, upgradePhrase,
+  daysLeftPhrase, habitChain, lawForDate, monthRace, monthTitle, monthWindow, upgradePhrase,
 } from "@/lib/atomic";
 
 export const Route = createFileRoute("/_authenticated/today")({
@@ -60,9 +63,6 @@ function TodayPage() {
   }, [data, month.end, month.start, tasks, today]);
   const place = Math.max(1, standings.findIndex((row) => row.id === me?.id) + 1);
   const leader = standings[0]?.id === me?.id && standings.length > 0;
-  const curve = useMemo(() => compoundSeries(mine, today, tasks), [mine, tasks, today]);
-  const chain = useMemo(() => dayChain(mine, today, tasks), [mine, tasks, today]);
-
   const [celebrate, setCelebrate] = useState(false);
   const [burstKey, setBurstKey] = useState<string | null>(null);
   const prevDone = useRef<number | null>(null);
@@ -135,10 +135,10 @@ function TodayPage() {
           leader={leader}
         />
 
+        <DayCountdown />
+        <MotivationCard today={today} />
+        <PushOptIn userId={me?.id} />
         <FourLawsCard law={lawForDate(today)} />
-
-        <CompoundChart points={curve} />
-        <ChainGrid dots={chain} />
 
         {dailyCount > 0 && doneDaily === dailyCount && (
           <div className="animate-pop border border-gold bg-gold px-4 py-3 text-center text-sm font-semibold text-gold-foreground">

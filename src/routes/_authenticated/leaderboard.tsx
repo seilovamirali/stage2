@@ -4,9 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { meQuery, useGroup, useHabits, useToday } from "@/hooks/use-habits";
 import { Bar } from "@/components/ProgressRing";
 import { Button } from "@/components/ui/button";
-import { CompoundChart } from "@/components/Atomic";
 import { RaceHistory, RaceRules, RaceTrack, type Racer } from "@/components/Race";
-import { compoundSeries, daysLeftPhrase, monthRace, monthTitle, monthWindow, shiftMonth } from "@/lib/atomic";
+import { daysLeftPhrase, monthRace, monthTitle, monthWindow, shiftMonth } from "@/lib/atomic";
 import { ALL_TASKS, activeDaily, computePoints, currentStreak } from "@/lib/habits";
 
 export const Route = createFileRoute("/_authenticated/leaderboard")({
@@ -99,27 +98,6 @@ function LeaderboardPage() {
             </section>
           )}
           <RaceRules />
-          <section>
-            <h2 className="font-display mb-3 text-xl font-bold">1% лучше</h2>
-            <ul className="space-y-2">
-              {rows.map((racer, index) => (
-                <li key={racer.id} className={`rounded-2xl border p-3 ${racer.id === me?.id ? "border-gold bg-gold-soft" : "bg-card"}`}>
-                  <div className="flex items-center gap-3">
-                    <span className="w-6 text-center font-bold text-muted-foreground">{index + 1}</span>
-                    <span className="text-2xl">{racer.avatar_emoji}</span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-semibold">{racer.display_name}</p>
-                      <p className="text-xs text-muted-foreground">темп {racer.race.pace.pct}% · {racer.points} оч.</p>
-                    </div>
-                    <span className="font-display text-lg font-bold">{racer.points}</span>
-                  </div>
-                  <div className="mt-2">
-                    <CompoundChart compact points={compoundSeries(racer.list, today, tasks)} />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
           <section>
             <h2 className="font-display mb-3 text-xl font-bold">Сегодня в группе</h2>
             <ul className="space-y-2">

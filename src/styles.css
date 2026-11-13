@@ -139,7 +139,6 @@
 }
 @keyframes check-pop { 0% { transform: scale(0.82) } 45% { transform: scale(1.14) } 100% { transform: scale(1) } }
 @keyframes ring-out { 0% { opacity: 0.9; transform: scale(0.4) } 100% { opacity: 0; transform: scale(1.85) } }
-@keyframes race-bob { 0%, 100% { transform: translateY(-50%) } 50% { transform: translateY(calc(-50% - 2px)) } }
 @utility animate-pop { animation: pop-in 0.45s cubic-bezier(.2,.8,.2,1.25) both; }
 @utility animate-fade-up { animation: fade-up 0.45s ease-out both; }
 @utility animate-confetti { animation: confetti-fall 2.4s ease-in forwards; }
@@ -159,7 +158,6 @@
 }
 
 .race-vehicle { transition: left 0.9s cubic-bezier(.22, .8, .24, 1); }
-.race-bob { animation: race-bob 1.8s ease-in-out infinite; }
 .atom-ring {
   position: absolute;
   inset: -4px;
@@ -191,7 +189,7 @@
   background-position: 0 0, 0 4px, 4px -4px, -4px 0;
 }
 @media (prefers-reduced-motion: reduce) {
-  .race-vehicle, .race-bob, .animate-check, .atom-ring, .atom-ring::after { animation: none; transition: none; }
+  .race-vehicle, .animate-check, .atom-ring, .atom-ring::after { animation: none; transition: none; }
 }
 
 

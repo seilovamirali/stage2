@@ -1,0 +1,4 @@
+project_id = "rveijqsmfzncelpexlmm"
+
+[functions.send-habit-reminders]
+verify_jwt = false

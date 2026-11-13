@@ -20,6 +20,14 @@ declare module "@tanstack/react-router" {
   }
 }
 
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`, {
+      scope: import.meta.env.BASE_URL,
+    });
+  });
+}
+
 const root = document.getElementById("root");
 if (!root) throw new Error("Root element #root is missing");
 

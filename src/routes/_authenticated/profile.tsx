@@ -7,8 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { meQuery, useGroup, useHabits, useToday } from "@/hooks/use-habits";
-import { ChainGrid, CompoundChart, IdentityField } from "@/components/Atomic";
-import { compoundSeries, dayChain } from "@/lib/atomic";
+import { IdentityField } from "@/components/Atomic";
 import {
   ALL_TASKS, activeTasks, bestStreak, computeBadges, computePoints, currentStreak, levelInfo,
 } from "@/lib/habits";
@@ -36,8 +35,6 @@ function ProfilePage() {
   }, [profile?.id, profile?.display_name, profile?.avatar_emoji]);
 
   const mine = useMemo(() => (data?.completions ?? []).filter((c) => c.user_id === me?.id), [data, me]);
-  const curve = useMemo(() => compoundSeries(mine, today, tasks), [mine, tasks, today]);
-  const chain = useMemo(() => dayChain(mine, today, tasks), [mine, tasks, today]);
   const points = computePoints(mine, "0000-01-01", "9999-12-31", tasks);
   const lvl = levelInfo(points);
   const badges = computeBadges(mine, tasks);
@@ -98,9 +95,6 @@ function ProfilePage() {
           <Tile label="Лучшая серия" value={String(bestStreak(mine, tasks))} />
         </div>
       </section>
-
-      <CompoundChart points={curve} />
-      <ChainGrid dots={chain} />
 
       <section className="space-y-3">
         <h2 className="font-display text-xl font-bold">Кто я</h2>

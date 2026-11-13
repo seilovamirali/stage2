@@ -12,9 +12,9 @@ export interface Racer {
   isMe?: boolean;
 }
 
-export function Vehicle({ kind, className = "h-9 w-16" }: { kind: VehicleId; className?: string }) {
+export function Vehicle({ kind, className = "h-12 w-20" }: { kind: VehicleId; className?: string }) {
   return (
-    <svg viewBox="0 0 96 44" className={className} aria-hidden>
+    <svg viewBox="0 0 96 64" className={`block overflow-visible ${className}`} aria-hidden>
       {kind === "walk" && <Walker />}
       {kind === "bike" && <Bicycle />}
       {kind === "moped" && <Moped />}
@@ -31,66 +31,71 @@ function Wheel({ cx, cy, r = 5, hot = false }: { cx: number; cy: number; r?: num
 
 function Walker() {
   return (
-    <g className="fill-foreground" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-      <circle cx="34" cy="10" r="4" fill="currentColor" />
-      <path d="M34 15 v9 M28 34 l6-8 6 8 M27 20 h12" fill="none" />
+    <g transform="translate(0 4)" className="stroke-foreground" fill="none" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="48" cy="16" r="5.5" className="fill-foreground" />
+      <path d="M48 22 v12 M40 28 h16 M48 34 l-7 14 M48 34 l7 14" />
     </g>
   );
 }
 
 function Bicycle() {
   return (
-    <g fill="none" className="stroke-foreground" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="24" cy="32" r="7" />
-      <circle cx="68" cy="32" r="7" />
-      <path d="M24 32 L42 32 L56 16 L68 32 L42 32 L36 16" />
-      <path d="M36 16 h14" className="stroke-gold" />
+    <g transform="translate(0 -2)" fill="none" className="stroke-foreground" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="28" cy="44" r="8" />
+      <circle cx="70" cy="44" r="8" />
+      <path d="M28 44 H46 L58 24 L70 44 H46 L40 24" />
+      <path d="M40 24 h16" className="stroke-gold" />
+      <circle cx="52" cy="20" r="3.2" className="fill-foreground stroke-none" />
     </g>
   );
 }
 
 function Moped() {
   return (
-    <g className="stroke-foreground" fill="none" strokeWidth="2" strokeLinejoin="round">
-      <circle cx="26" cy="33" r="6" />
-      <circle cx="72" cy="33" r="6" />
-      <path d="M26 33 h18 l8-12 h16 l6 12" />
-      <path d="M48 21 h10" className="stroke-gold" />
-      <circle cx="78" cy="18" r="2" className="fill-gold stroke-none" />
+    <g transform="translate(0 -4)" className="stroke-foreground" fill="none" strokeWidth="2" strokeLinejoin="round">
+      <circle cx="28" cy="46" r="7" />
+      <circle cx="72" cy="46" r="7" />
+      <path d="M28 46 h16 l8-14 h16 l6 14" />
+      <path d="M50 32 h12" className="stroke-gold" />
+      <circle cx="58" cy="22" r="3.4" className="fill-foreground stroke-none" />
+      <circle cx="78" cy="30" r="2" className="fill-gold stroke-none" />
     </g>
   );
 }
 
 function Sedan() {
   return (
-    <g>
-      <path d="M10 30 h70 a4 4 0 0 0 4-4 v-4 H18 l8-8 h28 l10 8 h12 v8 a2 2 0 0 1-2 2" className="fill-foreground" />
-      <path d="M28 22 h22 l6 6 H22z" className="fill-background" />
-      <Wheel cx={28} cy={32} />
-      <Wheel cx={70} cy={32} />
+    <g transform="translate(0 -2)">
+      <path d="M12 44 h68 a4 4 0 0 0 4-4 v-5 H20 l8-10 h26 l10 10 h16 v5 a2 2 0 0 1-2 2" className="fill-foreground" />
+      <path d="M30 30 h20 l6 8 H24z" className="fill-background" />
+      <circle cx="46" cy="20" r="3.2" className="fill-foreground" />
+      <Wheel cx={30} cy={46} />
+      <Wheel cx={70} cy={46} />
     </g>
   );
 }
 
 function SportCar() {
   return (
-    <g>
-      <path d="M8 32 h78 l-4-8 H40 l-8-7 H22 l-6 7 H10z" className="fill-foreground" />
-      <path d="M36 20 h16 l6 6 H30z" className="fill-gold" />
-      <Wheel cx={26} cy={33} hot />
-      <Wheel cx={72} cy={33} hot />
+    <g transform="translate(0 -3)">
+      <path d="M8 46 h80 l-4-9 H42 l-8-8 H24 l-6 8 H10z" className="fill-foreground" />
+      <path d="M38 31 h16 l6 7 H32z" className="fill-gold" />
+      <circle cx="50" cy="22" r="3.2" className="fill-foreground" />
+      <Wheel cx={26} cy={47} hot />
+      <Wheel cx={74} cy={47} hot />
     </g>
   );
 }
 
 function GtTurbo() {
   return (
-    <g>
-      <path d="M6 31 h84 l-2-6 H58 l-6-8 H24 L16 25 H8z" className="fill-foreground" />
-      <path d="M58 17 h16 v4 H62z" className="fill-foreground" />
-      <path d="M28 22 h18 l5 5 H24z" className="fill-gold" />
-      <Wheel cx={24} cy={33} r={5.5} hot />
-      <Wheel cx={74} cy={33} r={5.5} hot />
+    <g transform="translate(0 -3)">
+      <path d="M6 46 h84 l-2-7 H60 l-6-9 H26 L18 39 H8z" className="fill-foreground" />
+      <path d="M60 30 h16 v4 H64z" className="fill-foreground" />
+      <path d="M30 36 h18 l5 6 H26z" className="fill-gold" />
+      <circle cx="48" cy="20" r="3.2" className="fill-foreground" />
+      <Wheel cx={24} cy={48} r={5.5} hot />
+      <Wheel cx={76} cy={48} r={5.5} hot />
     </g>
   );
 }
@@ -125,15 +130,13 @@ export function RaceLane({ racer, leader, go }: { racer: Racer; leader: boolean;
           {racer.debt > 0 ? ` · штраф −${racer.debt}` : ""}
         </p>
       </div>
-      <div className="relative mt-3 h-12 overflow-hidden rounded-full border border-foreground/10 bg-background" aria-hidden>
+      <div className="relative mt-3 h-20 overflow-hidden rounded-full border border-foreground/10 bg-background" aria-hidden>
         <span className="absolute left-3 right-10 top-1/2 border-t border-dashed border-foreground/20" />
         <span className="absolute inset-y-0 right-0">
           <Checkered />
         </span>
-        <span className="race-vehicle absolute top-1/2" style={{ left: go ? `${travel}%` : "0%" }}>
-          <span className="race-bob block -translate-y-1/2">
-            <Vehicle kind={tier.id} />
-          </span>
+        <span className="race-vehicle absolute inset-y-0 flex items-center" style={{ left: go ? `${travel}%` : "0%" }}>
+          <Vehicle kind={tier.id} className="h-14 w-[5.25rem]" />
         </span>
       </div>
       <p className="mt-2 text-xs text-muted-foreground">{racer.points} оч.</p>
@@ -213,15 +216,13 @@ export function MyRaceCard({
             {points} оч. · темп {pace}% · место {place} из {total}
           </p>
         </div>
-        <Vehicle kind={tier.id} className="h-14 w-24 shrink-0" />
+        <Vehicle kind={tier.id} className="h-16 w-28 shrink-0" />
       </div>
-      <div className="relative mt-4 h-12 overflow-hidden rounded-full border border-foreground/10 bg-background" aria-hidden>
+      <div className="relative mt-4 h-20 overflow-hidden rounded-full border border-foreground/10 bg-background" aria-hidden>
         <span className="absolute left-3 right-10 top-1/2 border-t border-dashed border-foreground/20" />
         <span className="absolute inset-y-0 right-0"><span className="checkered block h-full w-6" /></span>
-        <span className="race-vehicle absolute top-1/2" style={{ left: `${travel}%` }}>
-          <span className="race-bob block -translate-y-1/2">
-            <Vehicle kind={tier.id} />
-          </span>
+        <span className="race-vehicle absolute inset-y-0 flex items-center" style={{ left: `${travel}%` }}>
+          <Vehicle kind={tier.id} className="h-14 w-[5.25rem]" />
         </span>
       </div>
       {debt > 0 && (

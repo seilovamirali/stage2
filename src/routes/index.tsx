@@ -22,7 +22,7 @@ function Landing() {
       <div className="mx-auto max-w-lg px-6 pb-16 pt-14">
         <AtomMark />
         <p className="mt-6 text-[11px] font-semibold uppercase tracking-[0.2em] text-gold">Stage 2</p>
-        <h1 className="font-display mt-3 text-5xl font-bold leading-[1.05]">1% лучше каждый день</h1>
+        <h1 className="font-display mt-3 text-5xl font-bold leading-[1.05]">Каждый день по делу</h1>
         <p className="mt-4 max-w-sm text-base leading-relaxed text-muted-foreground">
           Книга и спорт. Маленькие повторения складываются в другого человека — и в гонку с друзьями.
         </p>
@@ -42,7 +42,7 @@ function Landing() {
           ))}
         </ul>
         <div className="mt-8 grid grid-cols-3 gap-3 text-sm">
-          {["1% в день", "Цепочка", "Трасса"].map((item) => (
+          {["Одно очко", "Шесть дел", "Трасса"].map((item) => (
             <p key={item} className="border border-border px-2 py-3 text-center text-xs font-semibold">{item}</p>
           ))}
         </div>

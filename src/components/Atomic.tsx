@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { CompoundPoint, DotState, Law } from "@/lib/atomic";
+import type { Law } from "@/lib/atomic";
 import { defaultIdentity } from "@/lib/atomic";
 import { loadIdentity, saveIdentity } from "@/lib/identity";
 
@@ -11,60 +11,6 @@ export function AtomMark({ className = "size-8" }: { className?: string }) {
       <ellipse cx="16" cy="16" rx="12" ry="5" fill="none" className="stroke-foreground" strokeWidth="1.2" transform="rotate(60 16 16)" />
       <ellipse cx="16" cy="16" rx="12" ry="5" fill="none" className="stroke-foreground" strokeWidth="1.2" transform="rotate(120 16 16)" />
     </svg>
-  );
-}
-
-export function CompoundChart({ points, compact = false }: { points: CompoundPoint[]; compact?: boolean }) {
-  if (points.length < 2) return null;
-  const width = 320;
-  const height = compact ? 46 : 112;
-  const pad = compact ? 4 : 8;
-  const max = Math.max(...points.map((point) => point.ideal), 1.01);
-  const x = (index: number) => pad + (index / (points.length - 1)) * (width - pad * 2);
-  const y = (value: number) => height - pad - ((value - 1) / (max - 1)) * (height - pad * 2);
-  const path = (key: "actual" | "ideal") => points.map((point, index) => `${index === 0 ? "M" : "L"}${x(index).toFixed(1)} ${y(point[key]).toFixed(1)}`).join(" ");
-  const last = points[points.length - 1];
-  if (!last) return null;
-  const gain = Math.round((last.actual - 1) * 100);
-  const end = { x: x(points.length - 1), y: y(last.actual) };
-  return (
-    <figure className={compact ? "" : "space-y-2"}>
-      {!compact && (
-        <figcaption className="flex items-baseline justify-between gap-3">
-          <span className="font-display text-xl font-bold tracking-tight">1% лучше каждый день</span>
-          <span className="text-sm font-semibold text-gold">+{gain}%</span>
-        </figcaption>
-      )}
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full overflow-visible" role="img" aria-label={`Кривая роста, плюс ${gain} процентов`}>
-        <path d={path("ideal")} fill="none" stroke="currentColor" strokeOpacity="0.28" strokeDasharray="3 4" strokeWidth="1.4" />
-        <path d={path("actual")} fill="none" className="stroke-gold" strokeWidth="2.4" strokeLinejoin="round" strokeLinecap="round" />
-        <circle cx={end.x} cy={end.y} r={compact ? 2.4 : 3.4} className="fill-gold" />
-      </svg>
-      {!compact && <p className="text-xs leading-relaxed text-muted-foreground">Пунктир — если становиться лучше на 1% каждый день. Сплошная линия — ваш темп.</p>}
-    </figure>
-  );
-}
-
-export function ChainGrid({ dots }: { dots: { date: string; state: DotState }[] }) {
-  return (
-    <section>
-      <h2 className="font-display text-xl font-bold tracking-tight">Не разрывай цепочку</h2>
-      <div className="mt-4 grid grid-cols-7 gap-x-2 gap-y-3">
-        {dots.map((dot) => (
-          <span
-            key={dot.date}
-            title={dot.date}
-            className={`mx-auto block size-3.5 rounded-full border ${
-              dot.state === "full"
-                ? "border-gold bg-gold"
-                : dot.state === "partial"
-                  ? "border-gold bg-gold/35"
-                  : "border-foreground/20 bg-transparent"
-            } ${dot.date === dots[dots.length - 1]?.date ? "ring-2 ring-gold/40 ring-offset-2 ring-offset-background" : ""}`}
-          />
-        ))}
-      </div>
-    </section>
   );
 }
 
