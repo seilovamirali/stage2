@@ -15,6 +15,14 @@ export function secondsUntilAlmatyMidnight(now: Date = new Date()): number {
   return 24 * 3600 - (hour * 3600 + minute * 60 + second);
 }
 
+export type CountdownTone = "green" | "orange" | "red";
+
+export function countdownTone(totalSeconds: number): CountdownTone {
+  if (totalSeconds > 6 * 3600) return "green";
+  if (totalSeconds >= 2 * 3600) return "orange";
+  return "red";
+}
+
 export function formatCountdown(totalSeconds: number): string {
   const safe = Math.max(0, totalSeconds);
   const hour = Math.floor(safe / 3600);
