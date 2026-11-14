@@ -1,10 +1,9 @@
-import { motivationForDate } from "@/lib/motivation";
+import { dailySpeech } from "@/lib/motivation";
 
-export function MotivationCard({ today }: { today: string }) {
+export function MotivationCard({ today, remaining }: { today: string; remaining: number }) {
   return (
-    <section className="border border-border border-l-[3px] border-l-gold bg-card px-4 py-4">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gold">На сегодня</p>
-      <p className="mt-2 text-base leading-relaxed">{motivationForDate(today)}</p>
-    </section>
+    <p className="border-l-[3px] border-gold pl-3 text-base font-semibold leading-snug">
+      {dailySpeech(today, remaining)}
+    </p>
   );
 }

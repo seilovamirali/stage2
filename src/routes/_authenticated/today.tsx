@@ -8,7 +8,6 @@ import { BookTeaser } from "@/components/BookTeaser";
 import { CheckOrb, FourLawsCard, HabitDots, IdentityField } from "@/components/Atomic";
 import { DayCountdown } from "@/components/DayCountdown";
 import { MotivationCard } from "@/components/MotivationCard";
-import { PushOptIn } from "@/components/PushOptIn";
 import { MyRaceCard } from "@/components/Race";
 import { meQuery, useGroup, useHabits, useToday, useToggleTask } from "@/hooks/use-habits";
 import { useBookProgress } from "@/hooks/use-book";
@@ -85,17 +84,17 @@ function TodayPage() {
   };
 
   return (
-    <div className="px-5 pb-8 pt-8">
+    <div className="px-5 pb-5 pt-5">
       {celebrate && <Confetti />}
       <header>
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gold">Stage 2</p>
-        <p className="mt-3 text-sm capitalize text-muted-foreground">{formatRuDate(today)}</p>
+        <p className="mt-2 text-sm capitalize text-muted-foreground">{formatRuDate(today)}</p>
         <h1 className="font-display mt-1 text-3xl font-bold leading-tight">
           Привет, {profile?.display_name ?? "…"}
         </h1>
-        <div className="mt-6 flex items-center gap-4">
+        <div className="mt-4 flex items-center gap-4">
           <ProgressRing value={pct} size={104} stroke={8} label={`${doneDaily}/${dailyCount}`} />
-          <div className="flex-1 space-y-2">
+          <div className="flex-1 space-y-1.5">
             <Stat label="Серия" value={String(streak)} />
             <Stat label="Очки" value={String(points)} />
             <div>
@@ -111,7 +110,7 @@ function TodayPage() {
         </div>
       </header>
 
-      <div className="mt-8 space-y-8">
+      <div className="mt-4 space-y-4">
         {(group.isError || habitsQ.isError) && (
           <Button variant="outline" className="w-full" onClick={() => { void group.refetch(); void habitsQ.refetch(); }}>
             Не удалось загрузить. Повторить
@@ -136,8 +135,6 @@ function TodayPage() {
         />
 
         <DayCountdown />
-        <MotivationCard today={today} />
-        <PushOptIn userId={me?.id} />
         <FourLawsCard law={lawForDate(today)} />
 
         {dailyCount > 0 && doneDaily === dailyCount && (
@@ -147,8 +144,9 @@ function TodayPage() {
         )}
 
         <section>
-          <h2 className="font-display mb-3 text-xl font-bold">Сегодня</h2>
-          <div className="space-y-3">
+          <h2 className="font-display mb-2 text-xl font-bold">Сегодня</h2>
+          <MotivationCard today={today} remaining={Math.max(0, dailyCount - doneDaily)} />
+          <div className="mt-3 space-y-2">
             {dailyTasks.map((task, index) => (
               <HabitCard
                 key={task.key}
@@ -229,7 +227,7 @@ function HabitCard({ task, done, burst, index, userId, dots, pageLabel, disabled
 }) {
   return (
     <article
-      className={`animate-fade-up border p-4 ${done ? "border-gold bg-gold-soft/70" : "border-border bg-card"}`}
+      className={`animate-fade-up border px-3 py-3 ${done ? "border-gold bg-gold-soft/70" : "border-border bg-card"}`}
       style={{ animationDelay: `${index * 40}ms` }}
     >
       <div className="flex items-start gap-3">
@@ -239,10 +237,10 @@ function HabitCard({ task, done, burst, index, userId, dots, pageLabel, disabled
           <IdentityField userId={userId} habitKey={task.key} habitTitle={task.title} />
           <p className="mt-1 text-sm text-muted-foreground">{task.description}</p>
           {pageLabel && <p className="mt-1 text-sm font-medium">{pageLabel}</p>}
-          <div className="mt-3"><HabitDots dots={dots} /></div>
+          <div className="mt-2"><HabitDots dots={dots} /></div>
         </div>
       </div>
-      <div className={`mt-3 grid gap-2 ${pageLabel ? "grid-cols-2" : "grid-cols-1"}`}>
+      <div className={`mt-2 grid gap-2 ${pageLabel ? "grid-cols-2" : "grid-cols-1"}`}>
         {pageLabel && (
           <Button asChild variant="outline" size="xl" className="px-2">
             <Link to="/book">Моя книга</Link>

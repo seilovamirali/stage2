@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { meQuery, useGroup, useHabits, useToday } from "@/hooks/use-habits";
 import { IdentityField } from "@/components/Atomic";
+import { PushOptIn } from "@/components/PushOptIn";
 import {
   ALL_TASKS, activeTasks, bestStreak, computeBadges, computePoints, currentStreak, levelInfo,
 } from "@/lib/habits";
@@ -117,6 +118,11 @@ function ProfilePage() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="font-display text-xl font-bold">Уведомления</h2>
+        <PushOptIn userId={me?.id} />
       </section>
 
       <Button variant="outline" size="xl" className="mb-4 w-full" onClick={signOut}>Выйти</Button>
