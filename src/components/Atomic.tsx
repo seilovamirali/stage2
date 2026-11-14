@@ -6,10 +6,13 @@ import { loadIdentity, saveIdentity } from "@/lib/identity";
 export function AtomMark({ className = "size-8" }: { className?: string }) {
   return (
     <svg viewBox="0 0 32 32" className={className} aria-hidden>
-      <circle cx="16" cy="16" r="2.2" className="fill-gold" />
-      <ellipse cx="16" cy="16" rx="12" ry="5" fill="none" className="stroke-foreground" strokeWidth="1.2" />
-      <ellipse cx="16" cy="16" rx="12" ry="5" fill="none" className="stroke-foreground" strokeWidth="1.2" transform="rotate(60 16 16)" />
-      <ellipse cx="16" cy="16" rx="12" ry="5" fill="none" className="stroke-foreground" strokeWidth="1.2" transform="rotate(120 16 16)" />
+      <path d="M8.2 5.2h15.6v2.4c0 5-3.1 8.6-7.8 9-4.7-.4-7.8-4-7.8-9V5.2z" className="fill-gold" />
+      <path d="M11.2 7.4c2.2 1.2 7.4 1.2 9.6 0" fill="none" className="stroke-background" strokeWidth="1.1" strokeLinecap="round" />
+      <path d="M8.2 8H5.2a3.8 3.8 0 0 0 3.8 4.6" fill="none" className="stroke-gold" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M23.8 8h3a3.8 3.8 0 0 1-3.8 4.6" fill="none" className="stroke-gold" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M16 16.6v3.2" className="stroke-foreground" strokeWidth="2" strokeLinecap="round" />
+      <path d="M12.4 20.2h7.2v2.2h-7.2z" className="fill-foreground" />
+      <path d="M10 24.6h12" className="stroke-foreground" strokeWidth="2.2" strokeLinecap="round" />
     </svg>
   );
 }
