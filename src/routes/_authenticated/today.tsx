@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ProgressRing, Bar } from "@/components/ProgressRing";
 import { Confetti } from "@/components/Confetti";
 import { BookTeaser } from "@/components/BookTeaser";
-import { CheckOrb, FourLawsCard, HabitDots, IdentityField } from "@/components/Atomic";
+import { CheckOrb, HabitDots, IdentityField } from "@/components/Atomic";
 import { DayCountdown } from "@/components/DayCountdown";
 import { MyRaceCard } from "@/components/Race";
 import { meQuery, useGroup, useHabits, useToday, useToggleTask } from "@/hooks/use-habits";
@@ -16,7 +16,7 @@ import {
 } from "@/lib/habits";
 import { pagePhrase } from "@/lib/book";
 import {
-  daysLeftPhrase, habitChain, lawForDate, monthRace, monthTitle, monthWindow, upgradePhrase,
+  daysLeftPhrase, habitChain, monthRace, monthTitle, monthWindow, upgradePhrase,
 } from "@/lib/atomic";
 
 export const Route = createFileRoute("/_authenticated/today")({
@@ -135,7 +135,6 @@ function TodayPage() {
         />
 
         <DayCountdown />
-        <FourLawsCard law={lawForDate(today)} />
 
         {dailyCount > 0 && doneDaily === dailyCount && (
           <div className="animate-pop border border-gold bg-gold px-4 py-3 text-center text-sm font-semibold text-gold-foreground">
