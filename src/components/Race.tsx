@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { vehicleTier, type VehicleId } from "@/lib/atomic";
+import { tierBand, VEHICLE_TIERS, vehicleTier } from "@/lib/atomic";
+import { Vehicle } from "@/components/Vehicles";
+
+export { Vehicle };
 
 export interface Racer {
   id: string;
@@ -10,94 +13,6 @@ export interface Racer {
   points: number;
   debt: number;
   isMe?: boolean;
-}
-
-export function Vehicle({ kind, className = "h-12 w-20" }: { kind: VehicleId; className?: string }) {
-  return (
-    <svg viewBox="0 0 96 64" className={`block overflow-visible ${className}`} aria-hidden>
-      {kind === "walk" && <Walker />}
-      {kind === "bike" && <Bicycle />}
-      {kind === "moped" && <Moped />}
-      {kind === "sedan" && <Sedan />}
-      {kind === "sport" && <SportCar />}
-      {kind === "gt" && <GtTurbo />}
-    </svg>
-  );
-}
-
-function Wheel({ cx, cy, r = 5, hot = false }: { cx: number; cy: number; r?: number; hot?: boolean }) {
-  return <circle cx={cx} cy={cy} r={r} className={hot ? "fill-gold" : "fill-foreground"} />;
-}
-
-function Walker() {
-  return (
-    <g transform="translate(0 4)" className="stroke-foreground" fill="none" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="48" cy="16" r="5.5" className="fill-foreground" />
-      <path d="M48 22 v12 M40 28 h16 M48 34 l-7 14 M48 34 l7 14" />
-    </g>
-  );
-}
-
-function Bicycle() {
-  return (
-    <g transform="translate(0 -2)" fill="none" className="stroke-foreground" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="28" cy="44" r="8" />
-      <circle cx="70" cy="44" r="8" />
-      <path d="M28 44 H46 L58 24 L70 44 H46 L40 24" />
-      <path d="M40 24 h16" className="stroke-gold" />
-      <circle cx="52" cy="20" r="3.2" className="fill-foreground stroke-none" />
-    </g>
-  );
-}
-
-function Moped() {
-  return (
-    <g transform="translate(0 -4)" className="stroke-foreground" fill="none" strokeWidth="2" strokeLinejoin="round">
-      <circle cx="28" cy="46" r="7" />
-      <circle cx="72" cy="46" r="7" />
-      <path d="M28 46 h16 l8-14 h16 l6 14" />
-      <path d="M50 32 h12" className="stroke-gold" />
-      <circle cx="58" cy="22" r="3.4" className="fill-foreground stroke-none" />
-      <circle cx="78" cy="30" r="2" className="fill-gold stroke-none" />
-    </g>
-  );
-}
-
-function Sedan() {
-  return (
-    <g transform="translate(0 -2)">
-      <path d="M12 44 h68 a4 4 0 0 0 4-4 v-5 H20 l8-10 h26 l10 10 h16 v5 a2 2 0 0 1-2 2" className="fill-foreground" />
-      <path d="M30 30 h20 l6 8 H24z" className="fill-background" />
-      <circle cx="46" cy="20" r="3.2" className="fill-foreground" />
-      <Wheel cx={30} cy={46} />
-      <Wheel cx={70} cy={46} />
-    </g>
-  );
-}
-
-function SportCar() {
-  return (
-    <g transform="translate(0 -3)">
-      <path d="M8 46 h80 l-4-9 H42 l-8-8 H24 l-6 8 H10z" className="fill-foreground" />
-      <path d="M38 31 h16 l6 7 H32z" className="fill-gold" />
-      <circle cx="50" cy="22" r="3.2" className="fill-foreground" />
-      <Wheel cx={26} cy={47} hot />
-      <Wheel cx={74} cy={47} hot />
-    </g>
-  );
-}
-
-function GtTurbo() {
-  return (
-    <g transform="translate(0 -3)">
-      <path d="M6 46 h84 l-2-7 H60 l-6-9 H26 L18 39 H8z" className="fill-foreground" />
-      <path d="M60 30 h16 v4 H64z" className="fill-foreground" />
-      <path d="M30 36 h18 l5 6 H26z" className="fill-gold" />
-      <circle cx="48" cy="20" r="3.2" className="fill-foreground" />
-      <Wheel cx={24} cy={48} r={5.5} hot />
-      <Wheel cx={76} cy={48} r={5.5} hot />
-    </g>
-  );
 }
 
 export function Trophy({ className = "size-4" }: { className?: string }) {
@@ -136,7 +51,7 @@ export function RaceLane({ racer, leader, go }: { racer: Racer; leader: boolean;
           <Checkered />
         </span>
         <span className="race-vehicle absolute inset-y-0 flex items-center" style={{ left: go ? `${travel}%` : "0%" }}>
-          <Vehicle kind={tier.id} className="h-14 w-[5.25rem]" />
+          <Vehicle kind={tier.id} className="h-14 w-[6.5rem]" />
         </span>
       </div>
       <p className="mt-2 text-xs text-muted-foreground">{racer.points} оч.</p>
@@ -216,13 +131,13 @@ export function MyRaceCard({
             {points} оч. · темп {pace}% · место {place} из {total}
           </p>
         </div>
-        <Vehicle kind={tier.id} className="h-16 w-28 shrink-0" />
+        <Vehicle kind={tier.id} className="h-16 w-[7.5rem] shrink-0" />
       </div>
       <div className="relative mt-4 h-20 overflow-hidden rounded-full border border-foreground/10 bg-background" aria-hidden>
         <span className="absolute left-3 right-10 top-1/2 border-t border-dashed border-foreground/20" />
         <span className="absolute inset-y-0 right-0"><span className="checkered block h-full w-6" /></span>
         <span className="race-vehicle absolute inset-y-0 flex items-center" style={{ left: `${travel}%` }}>
-          <Vehicle kind={tier.id} className="h-14 w-[5.25rem]" />
+          <Vehicle kind={tier.id} className="h-14 w-[6.5rem]" />
         </span>
       </div>
       {debt > 0 && (
@@ -248,7 +163,30 @@ export function RaceRules() {
         <li>Привычки у всех одни: книга, спорт, иностранный язык, витамин C, витамин E и КК.</li>
         <li>Одно выполненное задание — одно очко. Штрафов нет.</li>
         <li>Трасса — календарный месяц, с 1-го числа до последнего. Место на треке — набранные очки.</li>
-        <li>Машина зависит от процента закрытых заданий. В новом месяце счёт начинается сначала.</li>
+        <li>Техника зависит от процента закрытых заданий: от пешком до ракеты. В новом месяце счёт начинается сначала.</li>
+      </ul>
+    </section>
+  );
+}
+
+export function VehicleLegend() {
+  const tiers = [...VEHICLE_TIERS].sort((a, b) => a.min - b.min);
+  return (
+    <section className="border border-border bg-card px-4 py-4" aria-label="Легенда техники">
+      <h2 className="font-display text-lg font-bold">Техника</h2>
+      <ul className="mt-3 grid grid-cols-2 gap-2">
+        {tiers.map((tier) => {
+          const band = tierBand(tier);
+          return (
+            <li key={tier.id} className="flex items-center gap-2 border border-foreground/10 px-2 py-1.5">
+              <Vehicle kind={tier.id} className="h-9 w-[4.2rem] shrink-0" />
+              <span className="min-w-0">
+                <span className="block truncate text-xs font-semibold">{tier.name}</span>
+                <span className="block text-[11px] tabular-nums text-muted-foreground">{band.from}–{band.to}%</span>
+              </span>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

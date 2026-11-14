@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { meQuery, useGroup, useHabits, useToday } from "@/hooks/use-habits";
 import { Bar } from "@/components/ProgressRing";
 import { Button } from "@/components/ui/button";
-import { RaceHistory, RaceRules, RaceTrack, type Racer } from "@/components/Race";
+import { RaceHistory, RaceRules, RaceTrack, VehicleLegend, type Racer } from "@/components/Race";
 import { daysLeftPhrase, monthRace, monthTitle, monthWindow, shiftMonth } from "@/lib/atomic";
 import { ALL_TASKS, activeDaily, computePoints, currentStreak } from "@/lib/habits";
 
@@ -97,6 +97,7 @@ function LeaderboardPage() {
               </ul>
             </section>
           )}
+          <VehicleLegend />
           <RaceRules />
           <section>
             <h2 className="font-display mb-3 text-xl font-bold">Сегодня в группе</h2>

@@ -9,7 +9,7 @@ import { CheckOrb, FourLawsCard, HabitDots, IdentityField } from "@/components/A
 import { DayCountdown } from "@/components/DayCountdown";
 import { MotivationCard } from "@/components/MotivationCard";
 import { PushOptIn } from "@/components/PushOptIn";
-import { MyRaceCard } from "@/components/Race";
+import { MyRaceCard, VehicleLegend } from "@/components/Race";
 import { meQuery, useGroup, useHabits, useToday, useToggleTask } from "@/hooks/use-habits";
 import { useBookProgress } from "@/hooks/use-book";
 import {
@@ -134,6 +134,7 @@ function TodayPage() {
           phrase={upgradePhrase(race.pace.done, race.pace.denom)}
           leader={leader}
         />
+        <VehicleLegend />
 
         <DayCountdown />
         <MotivationCard today={today} />

@@ -12,6 +12,7 @@ import {
   periodScore,
   upgradeHint,
   upgradePhrase,
+  VEHICLE_TIERS,
   vehicleTier,
 } from "./atomic";
 import { loadIdentity, saveIdentity } from "./identity";
@@ -60,22 +61,42 @@ describe("atomic habits helpers", () => {
 });
 
 describe("race tiers", () => {
-  it("maps a percentage to a Russian vehicle", () => {
+  it("splits the pace into eleven even bands", () => {
+    expect(VEHICLE_TIERS).toHaveLength(11);
+    const seen = new Set<string>();
+    for (let pct = 0; pct <= 100; pct += 1) seen.add(vehicleTier(pct).id);
+    expect(seen.size).toBe(11);
     expect(vehicleTier(0).name).toBe("Пешком");
     expect(vehicleTier(9).name).toBe("Пешком");
-    expect(vehicleTier(10).name).toBe("Велик");
-    expect(vehicleTier(29).name).toBe("Велик");
-    expect(vehicleTier(30).name).toBe("Мопед");
-    expect(vehicleTier(50).name).toBe("Седан");
-    expect(vehicleTier(70).name).toBe("Спорткар");
-    expect(vehicleTier(90).name).toBe("GT Turbo");
-    expect(vehicleTier(100).name).toBe("GT Turbo");
+    expect(vehicleTier(10).name).toBe("Самокат");
+    expect(vehicleTier(18).name).toBe("Самокат");
+    expect(vehicleTier(19).name).toBe("Велик");
+    expect(vehicleTier(27).name).toBe("Велик");
+    expect(vehicleTier(28).name).toBe("Лошадь");
+    expect(vehicleTier(36).name).toBe("Лошадь");
+    expect(vehicleTier(37).name).toBe("Мотоцикл");
+    expect(vehicleTier(45).name).toBe("Мотоцикл");
+    expect(vehicleTier(46).name).toBe("Седан");
+    expect(vehicleTier(54).name).toBe("Седан");
+    expect(vehicleTier(55).name).toBe("Кроссовер");
+    expect(vehicleTier(63).name).toBe("Кроссовер");
+    expect(vehicleTier(64).name).toBe("Джип");
+    expect(vehicleTier(72).name).toBe("Джип");
+    expect(vehicleTier(73).name).toBe("Спорткар");
+    expect(vehicleTier(81).name).toBe("Спорткар");
+    expect(vehicleTier(82).name).toBe("Самолёт");
+    expect(vehicleTier(90).name).toBe("Самолёт");
+    expect(vehicleTier(91).name).toBe("Ракета");
+    expect(vehicleTier(100).name).toBe("Ракета");
+    expect(vehicleTier(-4).name).toBe("Пешком");
+    expect(vehicleTier(140).name).toBe("Ракета");
   });
 
   it("counts marks to the next vehicle in the genitive", () => {
-    expect(upgradeHint(8, 14)).toEqual({ marks: 2, name: "Спорткар", genitive: "Спорткара" });
-    expect(upgradePhrase(8, 14)).toBe("Ещё 2 отметки до Спорткара");
-    expect(upgradePhrase(14, 14)).toBe("Вы на GT Turbo — финишный флаг ваш.");
+    expect(upgradeHint(8, 14)).toEqual({ marks: 1, name: "Джип", genitive: "Джипа" });
+    expect(upgradePhrase(8, 14)).toBe("Ещё 1 отметка до Джипа");
+    expect(upgradePhrase(0, 10)).toBe("Ещё 1 отметка до Самоката");
+    expect(upgradePhrase(14, 14)).toBe("Вы на Ракете — финишный флаг ваш.");
     expect(marksWord(1)).toBe("отметка");
     expect(marksWord(5)).toBe("отметок");
     expect(marksWord(21)).toBe("отметка");

@@ -162,32 +162,57 @@ export function periodScore(
   return { done, denom, pct };
 }
 
-export type VehicleId = "gt" | "sport" | "sedan" | "moped" | "bike" | "walk";
+export type VehicleId =
+  | "walk"
+  | "scooter"
+  | "bike"
+  | "horse"
+  | "moto"
+  | "sedan"
+  | "crossover"
+  | "jeep"
+  | "sport"
+  | "plane"
+  | "rocket";
 
 export interface VehicleTier {
   id: VehicleId;
   min: number;
   name: string;
   genitive: string;
+  aboard: string;
 }
 
 export const VEHICLE_TIERS: readonly VehicleTier[] = [
-  { id: "gt", min: 90, name: "GT Turbo", genitive: "GT Turbo" },
-  { id: "sport", min: 70, name: "Спорткар", genitive: "Спорткара" },
-  { id: "sedan", min: 50, name: "Седан", genitive: "Седана" },
-  { id: "moped", min: 30, name: "Мопед", genitive: "Мопеда" },
-  { id: "bike", min: 10, name: "Велик", genitive: "Велика" },
-  { id: "walk", min: 0, name: "Пешком", genitive: "Пешком" },
+  { id: "rocket", min: 91, name: "Ракета", genitive: "Ракеты", aboard: "Ракете" },
+  { id: "plane", min: 82, name: "Самолёт", genitive: "Самолёта", aboard: "Самолёте" },
+  { id: "sport", min: 73, name: "Спорткар", genitive: "Спорткара", aboard: "Спорткаре" },
+  { id: "jeep", min: 64, name: "Джип", genitive: "Джипа", aboard: "Джипе" },
+  { id: "crossover", min: 55, name: "Кроссовер", genitive: "Кроссовера", aboard: "Кроссовере" },
+  { id: "sedan", min: 46, name: "Седан", genitive: "Седана", aboard: "Седане" },
+  { id: "moto", min: 37, name: "Мотоцикл", genitive: "Мотоцикла", aboard: "Мотоцикле" },
+  { id: "horse", min: 28, name: "Лошадь", genitive: "Лошади", aboard: "Лошади" },
+  { id: "bike", min: 19, name: "Велик", genitive: "Велика", aboard: "Велике" },
+  { id: "scooter", min: 10, name: "Самокат", genitive: "Самоката", aboard: "Самокате" },
+  { id: "walk", min: 0, name: "Пешком", genitive: "пешей прогулки", aboard: "пешей прогулке" },
 ];
+
+const WALKING = VEHICLE_TIERS[VEHICLE_TIERS.length - 1] ?? {
+  id: "walk" as const,
+  min: 0,
+  name: "Пешком",
+  genitive: "пешей прогулки",
+  aboard: "пешей прогулке",
+};
 
 export function vehicleTier(pct: number): VehicleTier {
   const value = Math.max(0, Math.min(100, pct));
-  return VEHICLE_TIERS.find((tier) => value >= tier.min) ?? {
-    id: "walk",
-    min: 0,
-    name: "Пешком",
-    genitive: "Пешком",
-  };
+  return VEHICLE_TIERS.find((tier) => value >= tier.min) ?? WALKING;
+}
+
+export function tierBand(tier: VehicleTier): { from: number; to: number } {
+  const next = VEHICLE_TIERS.filter((item) => item.min > tier.min).sort((a, b) => a.min - b.min)[0];
+  return { from: tier.min, to: next ? next.min - 1 : 100 };
 }
 
 export function marksWord(marks: number): string {
@@ -201,18 +226,17 @@ export function marksWord(marks: number): string {
 export function upgradeHint(done: number, denom: number): { marks: number; name: string; genitive: string } | null {
   if (denom <= 0) return null;
   const pct = (done / denom) * 100;
-  if (pct >= 90) return null;
-  const nextMin = [10, 30, 50, 70, 90].find((threshold) => pct < threshold);
-  if (nextMin == null) return null;
-  const marks = Math.max(1, Math.ceil((nextMin / 100) * denom - done - 1e-9));
-  const tier = vehicleTier(nextMin);
-  return { marks, name: tier.name, genitive: tier.genitive };
+  const next = [...VEHICLE_TIERS].sort((a, b) => a.min - b.min).find((tier) => tier.min > pct);
+  if (!next) return null;
+  const marks = Math.max(1, Math.ceil((next.min / 100) * denom - done - 1e-9));
+  return { marks, name: next.name, genitive: next.genitive };
 }
 
 export function upgradePhrase(done: number, denom: number): string {
   if (denom <= 0) return "Добавьте привычку, чтобы выехать на трассу.";
   const hint = upgradeHint(done, denom);
-  if (!hint) return "Вы на GT Turbo — финишный флаг ваш.";
+  const top = VEHICLE_TIERS[0] ?? WALKING;
+  if (!hint) return `Вы на ${top.aboard} — финишный флаг ваш.`;
   return `Ещё ${hint.marks} ${marksWord(hint.marks)} до ${hint.genitive}`;
 }
 
