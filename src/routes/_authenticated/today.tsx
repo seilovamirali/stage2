@@ -7,7 +7,6 @@ import { Confetti } from "@/components/Confetti";
 import { BookTeaser } from "@/components/BookTeaser";
 import { CheckOrb, FourLawsCard, HabitDots, IdentityField } from "@/components/Atomic";
 import { DayCountdown } from "@/components/DayCountdown";
-import { MotivationCard } from "@/components/MotivationCard";
 import { MyRaceCard } from "@/components/Race";
 import { meQuery, useGroup, useHabits, useToday, useToggleTask } from "@/hooks/use-habits";
 import { useBookProgress } from "@/hooks/use-book";
@@ -132,6 +131,7 @@ function TodayPage() {
           total={Math.max(1, standings.length)}
           phrase={upgradePhrase(race.pace.done, race.pace.denom)}
           leader={leader}
+          today={today}
         />
 
         <DayCountdown />
@@ -145,8 +145,7 @@ function TodayPage() {
 
         <section>
           <h2 className="font-display mb-2 text-xl font-bold">Сегодня</h2>
-          <MotivationCard today={today} remaining={Math.max(0, dailyCount - doneDaily)} />
-          <div className="mt-3 space-y-2">
+          <div className="space-y-2">
             {dailyTasks.map((task, index) => (
               <HabitCard
                 key={task.key}

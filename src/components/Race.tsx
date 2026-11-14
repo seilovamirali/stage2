@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { tierBand, VEHICLE_TIERS, vehicleTier } from "@/lib/atomic";
+import { vehicleCheer } from "@/lib/vehicle-cheer";
 import { Vehicle } from "@/components/Vehicles";
 
 export { Vehicle };
@@ -99,6 +100,7 @@ export function MyRaceCard({
   total,
   phrase,
   leader,
+  today,
 }: {
   month: string;
   daysLeftText: string;
@@ -114,8 +116,10 @@ export function MyRaceCard({
   total: number;
   phrase: string;
   leader: boolean;
+  today: string;
 }) {
   const tier = vehicleTier(pace);
+  const cheer = vehicleCheer(today, pace);
   const travel = Math.max(0, Math.min(100, position)) * 0.7;
   return (
     <section className="border border-border bg-card px-4 py-4">
@@ -126,6 +130,7 @@ export function MyRaceCard({
             {tier.name}
             {leader && <Trophy className="size-5" />}
           </h2>
+          <p className="mt-1 text-sm font-medium leading-snug">{cheer}</p>
           <p className="mt-1 text-sm text-muted-foreground">{daysLeftText}</p>
           <p className="mt-1 text-sm text-muted-foreground">
             {points} оч. · темп {pace}% · место {place} из {total}
